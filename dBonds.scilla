@@ -1,0 +1,335 @@
+scilla_version 0
+
+(* dBonds contract *)
+
+import ListUtils BoolUtils IntUtils
+
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+library DBonds
+
+(* dbond states *)
+let not_initialized_state = Uint32 0
+let initialized_state = Uint32 1
+let issued_state = Uint32 2
+let expired_paid_off_state = Uint32 3
+let expired_tech_defaulted_state = Uint32 4
+let expired_defaulted_state = Uint32 5
+
+(*error codes*)
+let wrong_dbond_state = Uint32 1
+
+let zero = Uint32 0
+let one = Uint32 1
+
+let min_int =
+  fun (a : Uint128) => fun (b : Uint128) =>
+  let alt = builtin lt a b in
+  match alt with
+  | True =>
+    a
+  | False =>
+    b
+  end
+
+let le_int =
+  fun (a : Uint128) => fun (b : Uint128) =>
+    let x = builtin lt a b in
+    match x with
+    | True => True
+    | False =>
+      let y = builtin eq a b in
+      match y with
+      | True => True
+      | False => False
+      end
+    end
+
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+
+type FiatBond = 
+    | FiatBondCon of Uint32 (*maturity timestamp*) 
+                  String (*ISIN*)
+type Fcdb = 
+  | FcdbCon of FiatBond (*the fiat bond lying as collateral*)
+            Uint128 (*total supply*)
+            Uint32 (*maturity timestamp*)
+            Uint32 (*retire timestamp*)
+            ByStr20 (*issuer of unit of account*)
+            Uint32 (*number of unit of account tokens to pay off at maturity*)
+            Uint32 (*dbond state*)
+            ByStr20 (*verification account*)
+            ByStr20 (*accounts served as counterparty*)
+            ByStr20 (*account served as liquidation agent*)
+            Uint32 (*annual percentage rate, 1000 goes for 10%*)
+            String (*escrow contract link*)
+
+
+(*for dbond and new state, returns same dbond with new state*)
+let set_state =
+  fun (cur_bond : Fcdb) =>
+  fun (new_state : Uint32) =>
+  match cur_bond with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
+    let ans = FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am new_state ver countrp liqag apr escrlink in
+    Some {Fcdb} ans
+  end
+
+(*for current dbond and new one, returns either the updated dbond or None*)
+let set_dbond = 
+  fun (cur_dbond : Fcdb) =>
+  fun (updated_dbond : Fcdb) =>
+  match cur_dbond with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
+    match updated_dbond with
+    | FcdbCon u_fiat_bond u_suppl u_mat_t u_ret_t u_pr_iss u_pr_am u_cur_state u_ver u_countrp u_liqag u_apr u_escrlink =>
+      let init_state = builtin eq cur_state initialized_state in
+      let not_init_state = builtin eq cur_state not_initialized_state in
+      let right_cur_state = orb init_state not_init_state in
+      let right_new_state = builtin eq u_cur_state initialized_state in
+      let valid_update = andb right_cur_state right_new_state in
+      match valid_update with
+      | True =>
+        Some {Fcdb} updated_dbond
+      | False => None {Fcdb}
+      end
+    end
+  end
+
+let if_final_state = 
+  fun(state : Uint32) =>
+  let is_paid_state = builtin eq state expired_paid_off_state in
+  let is_def_state = builtin eq state expired_defaulted_state in
+  orb is_paid_state is_def_state
+
+(*for current time and dbond returns dbond with state changed if needed depending on time*)
+let upd_timestate = 
+  fun(cur_timestamp : Uint32) =>
+  fun(dbond : Fcdb) =>
+  match dbond with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
+    let is_iss_state = builtin eq cur_state issued_state in
+    let tmp = builtin lt cur_timestamp mat_t in
+    let is_matured = negb tmp in
+    let to_t_def = andb is_iss_state is_matured in
+    let is_t_def_state = builtin eq cur_state expired_tech_defaulted_state in
+    let tmp = builtin lt cur_timestamp ret_t in
+    let is_def = negb tmp in
+    let to_def = andb is_t_def_state is_def in
+    match to_t_def with
+    | True =>
+      let ans = FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am expired_tech_defaulted_state ver countrp liqag apr escrlink in
+      ans
+    | False =>
+      match to_def with
+      | True => 
+        let ans = FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am expired_defaulted_state ver countrp liqag apr escrlink in
+        ans
+      | False =>
+        dbond
+      end
+    end
+  end
+
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract DBonds
+(owner: ByStr20,
+decimals : Uint32,
+name : String,
+symbol : String)
+
+(* HOW TO INITiALIZE IT WITH EMPY/ZERO VIRABLES ??? *)
+field dbond : Fcdb = 
+  let z32 = Uint32 0 in
+  let z128 = Uint128 0 in
+  let emptstr = "" in
+  let zx = builtin ripemd160hash z32 in
+  let fb = FiatBondCon z32 emptstr in
+  FcdbCon fb z128 z32 z32 zx z32 z32 zx zx zx z32 emptstr
+
+
+(*owner balance will be initialized at verification stage*)
+field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
+field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
+
+(*to create or overwrite dbond by owner while state is less than issued*)
+transition CreateUpdateDBond (init_dbond : Fcdb)
+  valid_auth = builtin eq _sender owner;
+  match valid_auth with
+  | True =>
+    cur_db <- dbond;
+    upd = set_dbond cur_db init_dbond;
+    match upd with
+    | Some db =>
+      dbond := db;
+      e = {_eventname : "CreateUpdateDBondSuccess"; caller : _sender};
+      event e
+    | None =>
+      e = {_eventname : "CreateUpdateDBondFailureState"; caller : _sender};
+      event e
+    end
+  | False =>
+    e = {_eventname : "CreateUpdateDBondFailureAuth"; caller : _sender};
+    event e
+  end
+end
+
+transition VerifyDBond ()
+  cur_db <- dbond;
+  match cur_db with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
+    valid_auth = builtin eq _sender ver;
+    valid_state = builtin eq cur_state initialized_state;
+    valid_ver = andb valid_auth valid_state;
+    match valid_ver with
+    | True =>
+      tmp_db = set_state cur_db issued_state;
+      match tmp_db with
+      | Some tmp_db =>
+        dbond := tmp_db;
+        balances[owner] := suppl;
+        e = {_eventname : "VerifyDBondSuccess"; caller : _sender};
+        event e
+      | None =>
+        e = {_eventname : "VerifyDBondFailure"; caller : _sender};
+        event e
+      end
+    | False =>
+      e = {_eventname : "VerifyDBondFailure"; caller : _sender};
+      event e
+    end
+  end
+end
+
+transition BalanceOf (tokenOwner : ByStr20)
+  bal <- balances[tokenOwner];
+  match bal with
+  | Some v =>
+	e = {_eventname : "BalanceOf"; address : tokenOwner; balance : v};
+	event e
+  | None =>
+	e = {_eventname : "BalanceOf"; address : tokenOwner; balance : Uint128 0};
+    event e
+  end
+end
+
+transition TotalSupply ()
+cur_db <- dbond;
+  match cur_db with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
+    is_init_state = builtin eq cur_state initialized_state;
+    match is_init_state with
+    | True =>
+      e = {_eventname : "TotalSupply"; caller : _sender; balance : suppl};
+      event e
+    | False =>
+      e = {_eventname : "TotalSupply"; caller : _sender; balance : Uint128 0};
+      event e
+    end
+  end
+end
+
+transition Transfer (to : ByStr20, tokens : Uint128)
+  bal <- balances[_sender];
+  match bal with
+  | Some b =>
+    can_do = le_int tokens b;
+    match can_do with
+    | True =>
+      (* subtract tokens from _sender and add it to "to" *)
+      new_sender_bal = builtin sub b tokens;
+      balances[_sender] := new_sender_bal;
+
+      (* Adds tokens to "to" address *)
+      to_bal <- balances[to];
+      new_to_bal = match to_bal with
+      | Some x => builtin add x tokens
+      | None => tokens
+      end;
+
+  	  balances[to] := new_to_bal;
+      e = {_eventname : "TransferSuccess"; sender : _sender; recipient : to; amount : tokens};
+      event e
+    | False =>
+      (* balance not sufficient. *)
+      e = {_eventname : "TransferFailure"; sender : _sender; recipient : to; amount : Uint128 0};
+      event e
+    end
+  | None =>
+    (* no balance record, can't transfer *)
+  	e = {_eventname : "TransferFailure"; sender : _sender; recipient : to; amount : Uint128 0};
+    event e
+  end
+end
+
+transition TransferFrom (from : ByStr20, to : ByStr20, tokens : Uint128)
+  bal <- balances[from];
+  (* Check if _sender has been authorized by "from" *)
+  sender_allowed_from <- allowed[from][_sender];
+  match bal with
+  | Some a =>
+    match sender_allowed_from with
+    | Some b =>
+        (* We can only transfer the minimum of available or authorized tokens *)
+        t = min_int a b;
+        can_do = le_int tokens t;
+        match can_do with
+        | True =>
+            (* tokens is what we should subtract from "from" and add to "to" *)
+            new_from_bal = builtin sub a tokens;
+            balances[from] := new_from_bal;
+            to_bal <- balances[to];
+            match to_bal with
+            | Some tb =>
+                new_to_bal = builtin add tb tokens;
+                balances[to] := new_to_bal
+            | None =>
+                (* "to" has no balance. So just set it to tokens *)
+                balances[to] := tokens
+            end;
+            (* reduce "allowed" by "tokens" *)
+            new_allowed = builtin sub b tokens;
+            allowed[from][_sender] := new_allowed;
+            e = {_eventname : "TransferFromSuccess"; sender : from; recipient : to; amount : tokens};
+            event e
+        | False =>
+            e = {_eventname : "TransferFromFailure"; sender : from; recipient : to; amount : Uint128 0};
+            event e
+        end
+    | None =>
+        e = {_eventname : "TransferFromFailure"; sender : from; recipient : to; amount : Uint128 0};
+        event e
+    end
+  | None =>
+	e = {_eventname : "TransferFromFailure"; sender : from; recipient : to; amount : Uint128 0};
+	event e
+  end
+end
+
+transition Approve (spender : ByStr20, tokens : Uint128)
+  allowed[_sender][spender] := tokens;
+  e = {_eventname : "ApproveSuccess"; approver : _sender; spender : spender; amount : tokens};
+  event e
+end
+
+transition Allowance (tokenOwner : ByStr20, spender : ByStr20)
+  spender_allowance <- allowed[tokenOwner][spender];
+  match spender_allowance with
+  | Some n =>
+      e = {_eventname : "Allowance"; owner : tokenOwner; spender : spender; amount : n};
+      event e
+  | None =>
+      e = {_eventname : "Allowance"; owner : tokenOwner; spender : spender; amount : Uint128 0};
+      event e
+  end
+end
