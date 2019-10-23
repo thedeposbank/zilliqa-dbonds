@@ -78,7 +78,7 @@ let set_state =
   match cur_bond with
   | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
     let ans = FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am new_state ver countrp liqag apr escrlink in
-    Some {Fcdb} ans
+    ans
   end
 
 (*for current dbond and new one, returns either the updated dbond or None*)
@@ -194,16 +194,10 @@ transition VerifyDBond ()
     match valid_ver with
     | True =>
       tmp_db = set_state cur_db issued_state;
-      match tmp_db with
-      | Some tmp_db =>
-        dbond := tmp_db;
-        balances[owner] := suppl;
-        e = {_eventname : "VerifyDBondSuccess"; caller : _sender};
-        event e
-      | None =>
-        e = {_eventname : "VerifyDBondFailure"; caller : _sender};
-        event e
-      end
+      dbond := tmp_db;
+      balances[owner] := suppl;
+      e = {_eventname : "VerifyDBondSuccess"; caller : _sender};
+      event e
     | False =>
       e = {_eventname : "VerifyDBondFailure"; caller : _sender};
       event e
