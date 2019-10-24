@@ -2,31 +2,57 @@
 
 . ./scripts/functions.sh
 
-title running
+function print_usage_and_exit
+{
+    echo "Usage: $0 test_number"
+    exit 1
+}
 
-if [ $# != 1 ]
-then
-   print_usage_and_exit
-fi
+function run_test() {
 
-i=$1
+	if [ $# != 1 ] ; then
+		print_usage_and_exit
+	fi
+	test_dir="$1"
 
-if [[ ! -f ${cdir}/state_${i}.json ]]
-then
-    echo "Test $contract $i does not exist"
-    print_usage_and_exit
-fi
+	if [[ ! -f $test_dir/state.json ]] ; then
+		echo "Test $i does not exist"
+		print_usage_and_exit
+	fi
 
-scilla-runner -init ${cdir}/init.json -istate ${cdir}/state_${i}.json -imessage ${cdir}/message_${i}.json -o ${cdir}/output_${i}.json -iblockchain ${cdir}/blockchain_${i}.json -i ${sdir}/${contract}.scilla -gaslimit 8000
+	title "running test in $test_dir" 
 
-status=$?
+	scilla-runner \
+		-init tests/init.json \
+		-istate $test_dir/state.json \
+		-imessage $test_dir/message.json \
+		-iblockchain $test_dir/blockchain.json \
+		-i $contract.scilla \
+		-o $test_dir/output.json \
+		-gaslimit 8000
 
-if test $status -eq 0
-then
-    echo "output.json emitted by interpreter:"
-    cat ${cdir}/output_${i}.json
-    echo ""
+	status=$?
+
+	if test $status -eq 0
+	then
+		result=`jq -cS . $test_dir/output.json`
+		expected=`jq -cS . $test_dir/output_expected.json`
+		if [ "$result" != "$expected" ] ; then
+			print_error "test failed"
+			exit 1
+		fi
+	else
+		print_error "scilla-runner failed"
+		exit $status
+	fi
+}
+
+if [ "$1" = all ] ; then
+	for i in tests/*-*
+	do
+		run_test $i
+	done
 else
-    echo "scilla-runner failed"
-    exit $status
+	test_dir=$(echo "tests/$1-"*)
+	run_test $test_dir
 fi

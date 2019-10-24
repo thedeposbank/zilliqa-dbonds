@@ -164,7 +164,7 @@ field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uin
 
 (*to create or overwrite dbond by owner while state is less than issued*)
 transition CreateUpdateDBond (init_dbond : Fcdb)
-  valid_auth = builtin eq _sender owner;
+  valid_auth = builtin eq owner _sender;
   match valid_auth with
   | True =>
     cur_db <- dbond;
