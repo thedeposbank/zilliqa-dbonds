@@ -1,0 +1,27 @@
+[
+    { 
+        "vname" : "_scilla_version",
+        "type" : "Uint32",
+        "value" : "0"
+    },
+    {
+        "vname" : "owner",
+        "type" : "ByStr20", 
+        "value" : "0xC260F2C046eC08A51bB1Cc9D1fd3f97CFF189617"
+    },
+    {
+        "vname" : "decimals",
+        "type" : "Uint32" ,
+        "value" : "0"
+    },
+    { 
+        "vname" : "name",
+        "type" : "String",
+        "value" : "blahblah"
+    },
+    {
+        "vname": "symbol",
+        "type": "String",
+        "value": "DBAAAAA"
+    }
+]
