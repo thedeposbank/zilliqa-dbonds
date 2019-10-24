@@ -148,7 +148,6 @@ decimals : Uint32,
 name : String,
 symbol : String)
 
-(* HOW TO INITiALIZE IT WITH EMPY/ZERO VIRABLES ??? *)
 field dbond : Fcdb = 
   let z32 = Uint32 0 in
   let z128 = Uint128 0 in
@@ -221,8 +220,8 @@ transition TotalSupply ()
 cur_db <- dbond;
   match cur_db with
   | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am cur_state ver countrp liqag apr escrlink =>
-    is_init_state = builtin eq cur_state initialized_state;
-    match is_init_state with
+    is_issued = builtin lt initialized_state cur_state;
+    match is_issued with
     | True =>
       e = {_eventname : "TotalSupply"; caller : _sender; balance : suppl};
       event e
