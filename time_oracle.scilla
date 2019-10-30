@@ -1,0 +1,28 @@
+scilla_version 0
+
+import ListUtils
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+library TimeOracle
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract TimeOracle
+(owner: ByStr20,
+recipient: ByStr20)
+
+transition SendCurTimestamp (to : ByStr20, cur_timestamp : Uint32)
+    valid_auth = builtin eq owner _sender;
+    msg = { _tag : "SetTime"; _recipient : to; _amount : Uint128 0; upd_timestamp : cur_timestamp};
+    msgs = one_msg msg;
+    send msgs
+end
