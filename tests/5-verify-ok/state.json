@@ -37,7 +37,7 @@
 				"http://sdfsdf.com/sdfsdf"
 			]
 		}
-},
+	},
 	{
 		"vname": "_balance",
 		"type": "Uint128",
