@@ -1,10 +1,11 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "6268",
+  "gas_remaining": "6256",
   "_accepted": "false",
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "cur_state", "type": "Uint32", "value": "1" },
     {
       "vname": "dbond",
       "type": "Fcdb",
@@ -22,7 +23,6 @@
           "1602324610",
           "0xdeadbeefdeadbeef000000000000000000000001",
           "10000",
-          "1",
           "0xdeadbeefdeadbeef000000000000000000000002",
           "0xdeadbeefdeadbeef000000000000000000000003",
           "0xdeadbeefdeadbeef000000000000000000000004",
@@ -36,7 +36,10 @@
       "vname": "allowed",
       "type": "Map (ByStr20) (Map (ByStr20) (Uint128))",
       "value": []
-    }
+    },
+    { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
+    { "vname": "cur_price", "type": "Uint128", "value": "0" },
+    { "vname": "pr_balance", "type": "Uint128", "value": "0" }
   ],
   "events": [
     {

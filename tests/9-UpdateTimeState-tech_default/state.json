@@ -2,7 +2,9 @@
 	{
 		"vname": "balances",
 		"type": "Map (ByStr20) (Uint128)",
-		"value": []
+		"value": [
+			{ "key": "0x1234567890123456789012345678901234567890", "val": "9" }
+		]
 	},
 	{
 		"vname": "allowed",
@@ -20,30 +22,26 @@
 					"constructor" : "FiatBondCon",
 					"argtypes" : [],
 					"arguments" : [
-						"1602324610",
+						"20000000",
 						"US25152R5F60"
 					]
 				},
 				"10",
-				"1602324610",
-				"1602324610",
+				"19000000",
+				"21000000",
 				"0xdeadbeefdeadbeef000000000000000000000001",
-				"10000",
+				"100000",
 				"0xdeadbeefdeadbeef000000000000000000000002",
 				"0xdeadbeefdeadbeef000000000000000000000003",
 				"0xdeadbeefdeadbeef000000000000000000000004",
-				"300",
+				"3000",
 				"http://sdfsdf.com/sdfsdf"
 			]
 		}
 	},
-	{
-		"vname": "_balance",
-		"type": "Uint128",
-		"value": "0"
-	},
-	{ "vname": "cur_state", "type": "Uint32", "value": "2" },
-    { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
-    { "vname": "cur_price", "type": "Uint128", "value": "0" },
-    { "vname": "pr_balance", "type": "Uint128", "value": "0" }
+	{"vname" : "cur_timestamp", "type"  : "Uint32", "value" : "19000001"},
+	{"vname" : "cur_price", "type"  : "Uint128", "value" : "95000"},
+	{"vname" : "cur_state", "type"  : "Uint32","value" : "2"},
+	{"vname" : "pr_balance", "type"  : "Uint128", "value" : "10000"},
+	{"vname": "_balance", "type": "Uint128", "value": "9"}
 ]

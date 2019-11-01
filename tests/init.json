@@ -33,5 +33,10 @@
 		"vname": "symbol",
 		"type": "String",
 		"value": "DBAAAAA"
+	},
+	{
+		"vname": "time_oracle",
+		"type": "ByStr20",
+		"value": "0x0000000000000000000000000000000000000001"
 	}
 ]

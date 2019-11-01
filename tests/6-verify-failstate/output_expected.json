@@ -1,6 +1,6 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "7097",
+  "gas_remaining": "7074",
   "_accepted": "false",
   "message": null,
   "states": [
@@ -28,7 +28,6 @@
           "1602324610",
           "0xdeadbeefdeadbeef000000000000000000000001",
           "10000",
-          "0",
           "0xdeadbeefdeadbeef000000000000000000000002",
           "0xdeadbeefdeadbeef000000000000000000000003",
           "0xdeadbeefdeadbeef000000000000000000000004",
@@ -36,11 +35,15 @@
           "http://sdfsdf.com/sdfsdf"
         ]
       }
-    }
+    },
+    { "vname": "cur_state", "type": "Uint32", "value": "2" },
+    { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
+    { "vname": "cur_price", "type": "Uint128", "value": "0" },
+    { "vname": "pr_balance", "type": "Uint128", "value": "0" }
   ],
   "events": [
     {
-      "_eventname": "VerifyDBondFailure",
+      "_eventname": "VerifyDBondFailureState",
       "params": [
         {
           "vname": "caller",
