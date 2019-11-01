@@ -43,5 +43,5 @@
 	{"vname" : "cur_price", "type"  : "Uint128", "value" : "95000"},
 	{"vname" : "cur_state", "type"  : "Uint32","value" : "2"},
 	{"vname" : "pr_balance", "type"  : "Uint128", "value" : "10000"},
-	{"vname": "_balance", "type": "Uint128", "value": "9"}
+	{"vname": "_balance", "type": "Uint128", "value": "0"}
 ]
