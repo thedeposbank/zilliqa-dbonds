@@ -1,6 +1,6 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "6962",
+  "gas_remaining": "7001",
   "_accepted": "false",
   "message": null,
   "states": [
@@ -46,7 +46,7 @@
     },
     {"vname" : "cur_timestamp", "type"  : "Uint32", "value" : "21000001"},
     {"vname" : "cur_price", "type"  : "Uint128", "value" : "95000"},
-    {"vname" : "cur_state", "type"  : "Uint32","value" : "5"},
+    {"vname" : "cur_state", "type"  : "Uint32","value" : "3"},
     {"vname" : "pr_balance", "type"  : "Uint128", "value" : "10000"},
     {"vname": "_balance", "type": "Uint128", "value": "0"}
   ],
@@ -59,8 +59,8 @@
           "type": "ByStr20",
           "value": "0x1234567890123456789012345678901234567890"
         },
-        { "vname": "old_state", "type": "Uint32", "value": "4" },
-        { "vname": "new_state", "type": "Uint32", "value": "5" }
+        { "vname": "old_state", "type": "Uint32", "value": "3" },
+        { "vname": "new_state", "type": "Uint32", "value": "3" }
       ]
     }
   ]
