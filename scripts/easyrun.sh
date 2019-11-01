@@ -35,9 +35,11 @@ function run_test() {
 
 	if test $status -eq 0
 	then
-		result=`jq --argfile a $test_dir/output.json --argfile b $test_dir/output_expected.json -n 'def post_recurse(f): def r: (f | select(. != null) | r), .; r; def post_recurse: post_recurse(.[]?); ($a | (post_recurse | arrays) |= sort) as $a | ($b | (post_recurse | arrays) |= sort) as $b | $a == $b'`
-		if [ "$result" != true ] ; then
+		# result=`jq --argfile a $test_dir/output.json --argfile b $test_dir/output_expected.json -n 'def post_recurse(f): def r: (f | select(. != null) | r), .; r; def post_recurse: post_recurse(.[]?); ($a | (post_recurse | arrays) |= sort) as $a | ($b | (post_recurse | arrays) |= sort) as $b | $a == $b'`
+		result=`diff $test_dir/output.json $test_dir/output_expected.json`
+		if [ $? != 0 ] ; then
 			print_error "test failed"
+			echo "$result"
 			exit 1
 		fi
 	else
