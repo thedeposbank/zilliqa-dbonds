@@ -1,0 +1,157 @@
+scilla_version 0
+
+(* This contract implements a fungible token interface a la ERC20.*)
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+
+library SwapContract
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+
+let le_int =
+  fun (a : Uint128) => fun (b : Uint128) =>
+    let x = builtin lt a b in
+    match x with
+    | True => True
+    | False =>
+      let y = builtin eq a b in
+      match y with
+      | True => True
+      | False => False
+      end
+end
+
+let tr_retire_code : Uint32 = Uint32 1
+let tr_liquidation_code : Uint32 = Uint32 2
+let zero : Uint128 = Uint128 0
+let z = Uint32 0
+let zx = builtin ripemd160hash z
+
+type FiatBond = 
+    | FiatBondCon of Uint32 (*maturity timestamp*) 
+                     String (*ISIN*)
+type Fcdb = 
+  | FcdbCon of FiatBond (*the fiat bond lying as collateral*)
+            Uint128 (*total supply*)
+            Uint32 (*maturity timestamp*)
+            Uint32 (*retire timestamp*)
+            ByStr20 (*issuer of unit of account*)
+            Uint128 (*number of unit of account tokens to pay off at maturity, 100 goes for 1 token*)
+            ByStr20 (*verification account*)
+            ByStr20 (*accounts served as counterparty*)
+            ByStr20 (*account served as liquidation agent*)
+            Uint32 (*annual percentage rate, 1000 goes for 10%*)
+            String (*escrow contract link*)
+
+
+contract SwapContract
+(owner : ByStr20)
+
+field dbonds : Map ByStr20 (Fcdb) = Emp ByStr20 Fcdb
+field received : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
+field cur_processing_acc : ByStr20 = zx
+
+transition AddDbond (dbond : Fcdb)
+    ex <- exists dbonds[_sender];
+    match ex with
+    | True => 
+        e = {_eventname : "AddDbondFailureAlreadyExists"; caller : _sender; dbond : dbond};
+        event e
+    | False =>
+        dbonds[_sender] := dbond;
+        e = {_eventname : "AddDbondSuccess"; caller : _sender; dbond : dbond};
+        event e
+    end
+end
+
+transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
+    db <- dbonds[sender];
+    match db with
+    | Some db =>
+        match db with
+        | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+            is_pr_iss = builtin eq pr_iss _sender;
+            match is_pr_iss with
+            | True =>
+                match code with
+                | tr_retire_code =>
+                    received[sender] := amount;
+                    cur_processing_acc := sender;
+                    accept;
+                    msg = { _tag : "BalanceOf"; _recipient : sender; _amount : zero;
+                            tokenOwner : sender};
+                    msgs = one_msg msg;
+                    send msgs
+                | tr_liquidation_code =>
+                    received[sender] := amount;
+                    accept;
+                    msg = { _tag : "OnSuccRetire"; _recipient : _sender; _amount : zero};
+                    msgs = one_msg msg;
+                    send msgs
+                | _ =>
+                    e = {_eventname : "TransferSuccessFailureInvalidCode"; caller : _sender; sender : sender};
+                    event e
+                end
+            | False =>
+                e = {_eventname : "TransferSuccessFailureAuth"; caller : _sender; sender : sender};
+                event e
+            end
+        end
+    | None =>
+        e = {_eventname : "TransferSuccessFailureUnknownSender"; caller : _sender; sender : sender};
+        event e
+    end
+end
+
+(* is called only in chain with retire request *)
+transition BalanceOfResponse(address : ByStr20, balance : Uint128)
+    cpacc <- cur_processing_acc;
+    valid_auth = builtin eq _sender cpacc;
+    db <- dbonds[_sender];
+    match valid_auth with
+    | True =>
+        match db with
+        | Some db =>
+            match db with
+            | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+                needed_am = builtin sub suppl balance;
+                needed_am = builtin mul needed_am pr_am;
+                rec <- received[_sender];
+                match rec with
+                | Some rec =>
+                    enough = le_int needed_am rec;
+                    match enough with
+                    | True => 
+                        e = {_eventname : "BalanceOfResponseSuccess"; caller : _sender};
+                        event e;
+                        cur_processing_acc := zx;
+                        msg = { _tag : "OnSuccRetire"; _recipient : _sender; _amount : zero};
+                        msgs = one_msg msg;
+                        send msgs
+                    | False =>
+                        e = {_eventname : "BalanceOfResponseFailureNotEnough"; caller : _sender};
+                        event e;
+                        throw
+                    end
+                | None => 
+                    e = {_eventname : "BalanceOfResponseFailureNotEnough"; caller : _sender};
+                    event e;
+                    throw
+                end
+            end
+        | None =>
+            e = {_eventname : "BalanceOfResponseFailureUnknownSender"; caller : _sender};
+            event e;
+            throw
+        end
+    | False =>
+        e = {_eventname : "BalanceOfResponseFailureAuth"; caller : _sender};
+        event e;
+        throw
+    end
+end

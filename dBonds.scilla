@@ -17,8 +17,10 @@ let issued = Uint32 2
 let expired_paid_off = Uint32 3
 let expired_tech_defaulted = Uint32 4
 let expired_defaulted = Uint32 5
+
 let tr_retire_code : Uint32 = Uint32 1
-let tr_liquidation_code : Uint32 = Uint32 1
+let tr_liquidation_code : Uint32 = Uint32 2
+
 let zero = Uint128 0
 
 let min_int =
@@ -227,7 +229,10 @@ transition VerifyDBond ()
         cur_state := issued;
         balances[owner] := suppl;
         e = {_eventname : "VerifyDBondSuccess"; caller : _sender};
-        event e
+        event e;
+        msg = { _tag : "AddDbond"; _recipient : swap_contract; _amount : zero; dbond : cur_db};
+        msgs = one_msg msg;
+        send msgs
       | False =>
         e = {_eventname : "VerifyDBondFailureAuth"; caller : _sender};
         event e
@@ -284,7 +289,7 @@ transition GetUpdCurPrice ()
   match new_price with
   | Some new_price =>
     cur_price := new_price;
-    msg = { _tag : ""; _recipient : _sender; _amount : Uint128 0; upd_price : new_price};
+    msg = { _tag : ""; _recipient : _sender; _amount : zero; upd_price : new_price};
     msgs = one_msg msg;
     send msgs;
     e = {_eventname : "GetCurPrice"; caller : _sender; upd_price : new_price};
@@ -340,7 +345,6 @@ transition RetireDBond ()
       | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
         needed_am = builtin sub suppl bal;
         needed_am = builtin mul needed_am pr_am;
-        cur_state := expired_paid_off;
         msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
                  to : swap_contract; tokens : needed_am; code : tr_retire_code};
         msgs = one_msg msg;
@@ -356,6 +360,53 @@ transition RetireDBond ()
   end
 end
 
+(* is called from swap contract when retire is approved *)
+transition OnSuccRetire ()
+  valid_auth = builtin eq _sender swap_contract;
+  cur_state := expired_paid_off
+end
+
+(* receive only from pr_iss and only as a payment from liquidation of orig. bond *)
+transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
+  db <- dbond;
+  cur_st <- cur_state;
+  is_tech_def = builtin eq cur_st expired_tech_defaulted;
+  match is_tech_def with
+  | True =>
+    match db with
+    | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+      valid_auth = builtin eq _sender pr_iss;
+      match valid_auth with
+      | True =>
+        valid_code = builtin eq code tr_liquidation_code;
+        match valid_code with
+        | True =>
+          valid_sender = builtin eq sender liqag;
+          match valid_sender with
+          | True =>
+            accept;
+            msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
+                  to : swap_contract; tokens : amount; code : tr_liquidation_code};
+            msgs = one_msg msg;
+            send msgs
+          | False =>
+            e = {_eventname : "TransferSuccessFailureSender"; caller : _sender; sender : sender};
+            event e
+          end
+        | False =>
+          e = {_eventname : "TransferSuccessFailureCode"; caller : _sender; sender : sender};
+          event e
+        end
+      | False =>
+        e = {_eventname : "TransferSuccessFailureAuth"; caller : _sender; sender : sender};
+        event e
+      end
+    end
+  | False =>
+    e = {_eventname : "TransferSuccessFailureState"; caller : _sender; sender : sender};
+    event e
+  end
+end
 
 (**************************************)
 (* classic fungible token transitions *)
