@@ -17,12 +17,18 @@ let one_msg =
 (***************************************************)
 
 contract TimeOracle
-(owner: ByStr20,
-recipient: ByStr20)
+(owner: ByStr20)
 
-transition SendCurTimestamp (to : ByStr20, cur_timestamp : Uint32)
+field cur_timestamp : Uint32 = Uint32 0
+
+transition UpdateTime (new_timestamp : Uint32)
     valid_auth = builtin eq owner _sender;
-    msg = { _tag : "SetTime"; _recipient : to; _amount : Uint128 0; upd_timestamp : cur_timestamp};
-    msgs = one_msg msg;
-    send msgs
+    cur_timestamp := new_timestamp
+end
+
+transition SendTimestamp ()
+  time <- cur_timestamp;
+  msg = { _tag : "UpdateTime"; _recipient : _sender; new_timestamp : time};
+  msgs = one_msg msg;
+  send msgs
 end
