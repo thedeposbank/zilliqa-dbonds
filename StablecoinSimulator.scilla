@@ -81,7 +81,7 @@ transition TotalSupply ()
   send msgs
 end
 
-(* success notification to as "to" send instead of "sender" *)
+(* success notification to "to" send instead of "sender" *)
 transition Transfer (to : ByStr20, tokens : Uint128, code : Uint32)
   bal <- balances[_sender];
   match bal with
