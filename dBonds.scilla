@@ -261,6 +261,7 @@ transition UpdateTimeState ()
   end
 end
 
+(* public transition to update current time *)
 transition RequestTime()
   msg = { _tag : "SendTime"; _recipient : time_oracle; _amount : zero};
   msgs = one_msg msg;
@@ -371,6 +372,7 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
   z = Uint32 0;
   ordinary_transfer = builtin eq code z;
   match ordinary_transfer with
+  | True =>
   | False =>
     db <- dbond;
     cur_st <- cur_state;
@@ -410,7 +412,6 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
       e = {_eventname : "TransferSuccessFailureState"; caller : _sender; sender : sender};
       event e
     end
-  | True =>
   end
 end
 

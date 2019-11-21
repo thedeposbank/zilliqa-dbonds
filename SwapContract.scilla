@@ -76,6 +76,7 @@ transition AddDbond (dbond : Fcdb)
 end
 
 (* either accepts and exchangable = True or reverts the chain *)
+(* if sent more, sends the change back to emitent *)
 procedure CheckIfPaid(emitent : ByStr20)
     db_dep <- received_d[emitent];
     p_dep <- received_p[emitent];
@@ -125,66 +126,87 @@ end
 (* accumulates price tokens from emitent *)
 procedure AcceptPayOff(caller : ByStr20, sender : ByStr20, amount : Uint128)
     db <- dbonds[sender];
-    match db with
-    | Some db =>
+    ex <- exists exchangable[sender];
+    match ex with
+    | True =>
+        e = { _exception : "AlreadyPaid"; caller : _sender; sender : sender};
+        throw e
+    | False =>
         match db with
-        | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-            is_pr_iss = builtin eq pr_iss caller;
-            match is_pr_iss with
-            | True =>
-                received_p[sender] := amount;
-                CheckIfPaid sender
-            | False =>
-                e = {_eventname : "AcceptPayOffFailureAuth"; caller : _sender; sender : sender};
-                event e
+        | Some db =>
+            match db with
+            | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+                is_pr_iss = builtin eq pr_iss caller;
+                match is_pr_iss with
+                | True =>
+                    received_p[sender] := amount;
+                    CheckIfPaid sender
+                | False =>
+                    e = {_exception : "AcceptPayOffFailureAuth"; caller : _sender; sender : sender};
+                    throw e
+                end
             end
+        | None =>
+            e = {_exception : "AcceptPayOffFailureUnknownSender"; caller : _sender; sender : sender};
+            throw e
         end
-    | None =>
-        e = {_eventname : "AcceptPayOffFailureUnknownSender"; caller : _sender; sender : sender};
-        event e
     end
 end
 
 procedure AcceptLiquidation(caller : ByStr20, sender : ByStr20, amount : Uint128)
     db <- dbonds[sender];
-    match db with
-    | Some db =>
+    ex <- exists exchangable[sender];
+    match ex with
+    | True =>
+        e = { _exception : "AlreadyPaid"; caller : _sender; sender : sender};
+        throw e
+    | False =>
         match db with
-        | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-            is_pr_iss = builtin eq pr_iss caller;
-            match is_pr_iss with
-            | True =>
-                accept;
-                received_l[sender] := amount;
-                true = Uint32 1;
-                exchangable[sender] := true
-            | False =>
-                e = {_eventname : "AcceptLiquidationFailureAuth"; caller : _sender; sender : sender};
-                event e
+        | Some db =>
+            match db with
+            | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+                is_pr_iss = builtin eq pr_iss caller;
+                match is_pr_iss with
+                | True =>
+                    accept;
+                    received_l[sender] := amount;
+                    true = Uint32 1;
+                    exchangable[sender] := true
+                | False =>
+                    e = {_exception : "AcceptLiquidationFailureAuth"; caller : _sender; sender : sender};
+                    throw e
+                end
             end
+        | None =>
+            e = {_exception : "AcceptLiquidationFailureUnknownSender"; caller : _sender; sender : sender};
+            throw e
         end
-    | None =>
-        e = {_eventname : "AcceptLiquidationFailureUnknownSender"; caller : _sender; sender : sender};
-        event e
     end
 end
 
 procedure AcceptDbondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
     is_emitent <- exists dbonds[sender];
-    match is_emitent with
+    ex <- exists exchangable[sender];
+    match ex with
     | True =>
-        valid_auth = builtin eq caller sender;
-        match valid_auth with
-        | True =>
-            accept;
-            received_d[sender] := amount
-        | False =>
-            e = {_eventname : "AcceptDbondDepFailureAuth"; caller : _sender; sender : sender};
-            event e
-        end
+        e = { _exception : "AlreadyPaid"; caller : _sender; sender : sender};
+        throw e
     | False =>
-        e = {_eventname : "AcceptPayOffFailureUnknownSender"; caller : _sender; sender : sender};
-        event e
+        match is_emitent with
+        | True =>
+            valid_auth = builtin eq caller sender;
+            match valid_auth with
+            | True =>
+                accept;
+                received_d[sender] := amount
+            | False =>
+                e = {_exception : "AcceptDbondDepFailureAuth"; caller : _sender; sender : sender};
+                throw e
+            end
+        | False =>
+            e = {_exception : "AcceptPayOffFailureUnknownSender"; caller : _sender; sender : sender};
+            throw e
+        end
     end
 end
 
@@ -195,28 +217,43 @@ procedure ExchangeDbond(caller : ByStr20, sender : ByStr20, amount : Uint128)
     match is_ex with
     | True =>
         db <- dbonds[caller];
+        p <- received_p[caller];
+        l <- received_l[caller];
+        p_am = Uint128 0;
+        l_am = Uint128 0;
+        match p with
+        | Some p =>
+            p_am = p
+        | None =>
+        end;
+        match l with
+        | Some l =>
+            l_am = l
+        | None =>
+        end;
         match db with
         | Some db =>
-            match db with
-            | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-                accept;
-                need_to_send = builtin mul amount pr_am;
-                received_ex[caller][sender] := amount;
-                msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
-                    to : sender; tokens : need_to_send; code : Uint32 0};
-                msgs = one_msg msg;
-                send msgs
-            end
+                match db with
+                | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+                    accept;
+                    total = builtin add l_am p_am;
+                    per_db = builtin div total suppl;
+                    need_to_send = builtin mul amount per_db;
+                    received_ex[caller][sender] := amount;
+                    msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
+                        to : sender; tokens : need_to_send; code : Uint32 0};
+                    msgs = one_msg msg;
+                    send msgs
+                end
         | None =>
         end
     | False =>
         e = { _exception : "NotExchangable"};
         throw e
     end
-
 end
 
-(* is triggered on succeed incoming transfer *)
+(* is triggered on successful incoming transfer *)
 transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
     pay_off = builtin eq code pay_off_code;
     liquidation = builtin eq code liquidation_code;
