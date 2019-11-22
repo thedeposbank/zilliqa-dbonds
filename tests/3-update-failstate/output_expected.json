@@ -1,6 +1,6 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "6427",
+  "gas_remaining": "6438",
   "_accepted": "false",
   "message": null,
   "states": [
@@ -36,10 +36,9 @@
         ]
       }
     },
-    { "vname": "cur_state", "type": "Uint32", "value": "2" },
+    { "vname": "cur_state", "type": "Uint32", "value": "1" },
     { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
-    { "vname": "cur_price", "type": "Uint128", "value": "0" },
-    { "vname": "pr_balance", "type": "Uint128", "value": "0" }
+    { "vname": "cur_price", "type": "Uint128", "value": "0" }
   ],
   "events": [
     {

@@ -1,11 +1,11 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "6973",
+  "gas_remaining": "6939",
   "_accepted": "false",
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
-    { "vname": "cur_state", "type": "Uint32", "value": "3" },
+    { "vname": "cur_state", "type": "Uint32", "value": "6" },
     {
       "vname": "balances",
       "type": "Map (ByStr20) (Uint128)",
@@ -43,21 +43,20 @@
         ]
       }
     },
-    { "vname": "cur_timestamp", "type": "Uint32", "value": "19000001" },
-    { "vname": "cur_price", "type": "Uint128", "value": "95000" },
-    { "vname": "pr_balance", "type": "Uint128", "value": "10000" }
+    { "vname": "cur_timestamp", "type": "Uint32", "value": "21000001" },
+    { "vname": "cur_price", "type": "Uint128", "value": "95000" }
   ],
   "events": [
     {
-      "_eventname": "UpdateTimeStateSuccess",
+      "_eventname": "ClaimDefaultSuccess",
       "params": [
         {
           "vname": "caller",
           "type": "ByStr20",
-          "value": "0x1234567890123456789012345678901234567890"
+          "value": "0xdddddddddddddddddddddddddddddddddddddddd"
         },
         { "vname": "old_state", "type": "Uint32", "value": "2" },
-        { "vname": "new_state", "type": "Uint32", "value": "3" }
+        { "vname": "new_state", "type": "Uint32", "value": "6" }
       ]
     }
   ]

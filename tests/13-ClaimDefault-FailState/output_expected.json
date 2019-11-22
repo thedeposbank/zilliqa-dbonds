@@ -1,9 +1,11 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "7001",
+  "gas_remaining": "6954",
   "_accepted": "false",
   "message": null,
   "states": [
+    { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "cur_state", "type": "Uint32", "value": "5" },
     {
       "vname": "balances",
       "type": "Map (ByStr20) (Uint128)",
@@ -17,19 +19,16 @@
       "value": []
     },
     {
-      "vname" : "dbond",
-      "type"  : "Fcdb",
-      "value" : {
-        "constructor" : "FcdbCon",
-        "argtypes"    : [],
-        "arguments"   : [
+      "vname": "dbond",
+      "type": "Fcdb",
+      "value": {
+        "constructor": "FcdbCon",
+        "argtypes": [],
+        "arguments": [
           {
-            "constructor" : "FiatBondCon",
-            "argtypes" : [],
-            "arguments" : [
-              "20000000",
-              "US25152R5F60"
-            ]
+            "constructor": "FiatBondCon",
+            "argtypes": [],
+            "arguments": [ "20000000", "US25152R5F60" ]
           },
           "10",
           "19000000",
@@ -44,23 +43,20 @@
         ]
       }
     },
-    {"vname" : "cur_timestamp", "type"  : "Uint32", "value" : "21000001"},
-    {"vname" : "cur_price", "type"  : "Uint128", "value" : "95000"},
-    {"vname" : "cur_state", "type"  : "Uint32","value" : "3"},
-    {"vname" : "pr_balance", "type"  : "Uint128", "value" : "10000"},
-    {"vname": "_balance", "type": "Uint128", "value": "0"}
+    { "vname": "cur_timestamp", "type": "Uint32", "value": "21000001" },
+    { "vname": "cur_price", "type": "Uint128", "value": "95000" }
   ],
   "events": [
     {
-      "_eventname": "UpdateTimeStateSuccess",
+      "_eventname": "ClaimDefaultFailureState",
       "params": [
         {
           "vname": "caller",
           "type": "ByStr20",
-          "value": "0x1234567890123456789012345678901234567890"
+          "value": "0xdddddddddddddddddddddddddddddddddddddddd"
         },
-        { "vname": "old_state", "type": "Uint32", "value": "3" },
-        { "vname": "new_state", "type": "Uint32", "value": "3" }
+        { "vname": "old_state", "type": "Uint32", "value": "5" },
+        { "vname": "new_state", "type": "Uint32", "value": "5" }
       ]
     }
   ]

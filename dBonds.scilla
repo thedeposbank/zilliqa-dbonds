@@ -14,12 +14,16 @@ library DBonds
 let not_issued = Uint32 0
 let frozen_till_ver = Uint32 1
 let issued = Uint32 2
-let expired_paid_off = Uint32 3
-let expired_tech_defaulted = Uint32 4
-let expired_defaulted = Uint32 5
+let ex_paid_off = Uint32 3
+let ex_tech_defaulted = Uint32 4
+let ex_liquidated = Uint32 5
+let ex_defaulted = Uint32 6
 
-let tr_retire_code : Uint32 = Uint32 1
-let tr_liquidation_code : Uint32 = Uint32 2
+let tr_ordinary_code : Uint32 = Uint32 0
+let pay_off_code : Uint32 = Uint32 1 (* by emitent, to pay off the dbond *)
+let liquidation_code : Uint32 = Uint32 2 (* by liqag to deposit value from orig. bond liquidation *)
+let dbond_deposit_code : Uint32 = Uint32 3 (* by emitent to deposit acuired tokens *)
+let dbond_exchange_code : Uint32 = Uint32 4 (* by dbond holder *)
 
 let zero = Uint128 0
 
@@ -70,53 +74,11 @@ type Fcdb =
 
 let is_final_state = 
   fun(state : Uint32) =>
-  let is_paid_state = builtin eq state expired_paid_off in
-  let is_def_state = builtin eq state expired_defaulted in
-  orb is_paid_state is_def_state
-
-(* returns new state *)
-let upd_timestate = 
-  fun(cur_timestamp : Uint32) =>
-  fun(dbond : Fcdb) =>
-  fun (cur_state : Uint32) =>
-  fun(balance : Uint128) =>
-  let not_iss = builtin eq cur_state not_issued in
-  let is_final = is_final_state cur_state in
-  match is_final with
-  | True =>
-    cur_state
-  | False =>
-    match not_iss with
-    | True =>
-      cur_state
-    | False =>
-      match dbond with
-      | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-        let before_mat = builtin lt cur_timestamp mat_t in
-        match before_mat with
-        | True => 
-          cur_state
-        | False =>
-          let before_ret = builtin lt cur_timestamp ret_t in
-          let paid_off = builtin eq balance suppl in
-          match before_ret with
-          | True =>
-            match paid_off with
-            | True => expired_paid_off
-            | False => expired_tech_defaulted
-            end
-          | False =>
-            let missed_update = builtin lt cur_state expired_paid_off in
-            let to_paid = andb missed_update paid_off in
-            match to_paid with
-            | True => expired_paid_off
-            | False => expired_defaulted
-            end
-          end
-        end
-      end
-    end
-  end
+  let is_paid_state = builtin eq state ex_paid_off in
+  let is_def_state = builtin eq state ex_defaulted in
+  let is_liq_state = builtin eq state ex_liquidated in
+  let temp1 = orb is_paid_state is_def_state in
+  orb temp1 is_liq_state
 
 (* returns Some new_price if succeeds, None otherwise *)
 (* time, state and balance are considered up-to-date *)
@@ -154,7 +116,37 @@ let upd_price =
       end
     end
   end
-(***************************************************)
+
+let upd_timestate = 
+  fun(cur_timestamp : Uint32) =>
+  fun(dbond : Fcdb) =>
+  fun (cur_state : Uint32) =>
+  let not_iss = builtin lt cur_state issued in
+  let is_final = is_final_state cur_state in
+  let ret_same = orb not_iss is_final in
+  match ret_same with
+  | True =>
+    cur_state
+  | False =>
+    match dbond with
+    | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+      let before_mat = builtin lt cur_timestamp mat_t in
+      match before_mat with
+      | True => 
+        cur_state
+      | False =>
+        let before_ret = builtin lt cur_timestamp ret_t in
+        match before_ret with
+        | True =>
+          ex_tech_defaulted
+        | False =>
+          ex_defaulted
+        end
+      end
+    end
+  end
+
+  (***************************************************)
 (*             The contract definition             *)
 (***************************************************)
 
@@ -190,8 +182,6 @@ transition CreateUpdateDBond (init_dbond : Fcdb)
   | True =>
     cur_db <- dbond;
     cur_st <- cur_state;
-    zero = Uint32 0;
-    one = Uint32 1;
     not_iss = builtin eq cur_st not_issued;
     match not_iss with
     | True =>
@@ -209,9 +199,24 @@ transition CreateUpdateDBond (init_dbond : Fcdb)
 end
 
 transition FreezeTillVer()
-  cur_state := frozen_till_ver;
-  e = {_eventname : "FreezeTillVerSuccess"; caller : _sender};
-  event e
+  valid_auth = builtin eq _sender owner;
+  cur_st <- cur_state;
+  valid_state = builtin eq cur_st not_issued;
+  match valid_auth with
+  | True =>
+    match valid_state with
+    | True =>
+      cur_state := frozen_till_ver;
+      e = {_eventname : "FreezeTillVerSuccess"; caller : _sender};
+      event e
+    | False =>
+      e = {_eventname : "FreezeTillVerFailureState"; caller : _sender};
+      event e
+    end
+  | False =>
+    e = {_eventname : "FreezeTillVerFailureAuth"; caller : _sender};
+    event e
+  end
 end
 
 (* all cur-fields are expected to be up-to-date *)
@@ -241,23 +246,6 @@ transition VerifyDBond ()
       e = {_eventname : "VerifyDBondFailureState"; caller : _sender};
       event e
     end
-  end
-end
-
-transition UpdateTimeState ()
-  cur_time <- cur_timestamp;
-  db <- dbond;
-  bal <- balances[owner];
-  match bal with
-  | Some bal =>
-    cur_st <- cur_state;
-    upd_st = upd_timestate cur_time db cur_st bal;
-    cur_state := upd_st;
-    e = {_eventname : "UpdateTimeStateSuccess"; caller : _sender; old_state: cur_st; new_state : upd_st};
-    event e
-  | None =>
-    e = {_eventname : "UpdateTimeStateFailure"; caller : _sender};
-    event e
   end
 end
 
@@ -301,37 +289,31 @@ transition GetUpdCurPrice ()
   end
 end
 
-(* dbond is defaulted if and only if somebody claimed a default *)
+(* dbond is defaulted only if somebody claimed a default *)
 transition ClaimDefault()
   cur_st <- cur_state;
   cur_time <- cur_timestamp;
   cur_db <- dbond;
   bal <- balances[owner];
-  match bal with
-  | Some bal =>
-    new_state = upd_timestate cur_time cur_db cur_st bal;
-    is_iss = builtin eq cur_st issued;
-    to_tdef = builtin eq new_state expired_tech_defaulted;
-    to_def = builtin eq new_state expired_defaulted;
-    def = orb to_def to_tdef;
-    flag = andb is_iss def;
-    match flag with
-    | True =>
-      cur_state := new_state;
-      e = {_eventname : "ClaimTechDefaultSuccess"; caller : _sender; state : new_state};
-      event e
-    | False =>
-      e = {_eventname : "ClaimTechDefaultFailureState"; caller : _sender};
-      event e
-    end
-  | None =>
-    e = {_eventname : "ClaimTechDefaultFailureBalance"; caller : _sender};
+  new_state = upd_timestate cur_time cur_db cur_st;
+  is_iss = builtin eq cur_st issued;
+  to_tdef = builtin eq new_state ex_tech_defaulted;
+  to_def = builtin eq new_state ex_defaulted;
+  def = orb to_def to_tdef;
+  flag = andb is_iss def;
+  match flag with
+  | True =>
+    cur_state := new_state;
+    e = {_eventname : "ClaimDefaultSuccess"; caller : _sender; old_state : cur_st; new_state : new_state};
+    event e
+  | False =>
+    e = {_eventname : "ClaimDefaultFailureState"; caller : _sender; old_state : cur_st; new_state : cur_st};
     event e
   end
 end
 
 (* update cur_state inside, time is considered to be up-to-date*)
-transition RetireDBond ()
+transition PayOffDBond ()
   bal <- balances[owner];
   match bal with 
   | Some bal =>
@@ -347,7 +329,7 @@ transition RetireDBond ()
         needed_am = builtin sub suppl bal;
         needed_am = builtin mul needed_am pr_am;
         msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                 to : swap_contract; tokens : needed_am; code : tr_retire_code};
+                 to : swap_contract; tokens : needed_am; code : pay_off_code};
         msgs = one_msg msg;
         send msgs
       end
@@ -361,55 +343,88 @@ transition RetireDBond ()
   end
 end
 
-(* is called from swap contract when retire is approved *)
-transition OnSuccRetire ()
+(* is called from swap contract *)
+transition OnSuccPayOff ()
   valid_auth = builtin eq _sender swap_contract;
-  cur_state := expired_paid_off
+  cur_st <- cur_state;
+  valid_state = builtin eq cur_st issued;
+  match valid_auth with
+  | True =>
+    match valid_state with
+    | True =>
+      cur_state := ex_paid_off
+    | False =>
+      e = {_eventname : "OnSuccPayOffFailureState"; caller : _sender};
+      event e
+    end
+  | False =>
+    e = {_eventname : "OnSuccPayOffFailureAuth"; caller : _sender};
+    event e
+  end
+end
+
+(* is called from swap contract *)
+transition OnSuccLiq ()
+  valid_auth = builtin eq _sender swap_contract;
+  cur_st <- cur_state;
+  valid_state = builtin eq cur_st ex_tech_defaulted;
+  match valid_auth with
+  | True =>
+    match valid_state with
+    | True =>
+      cur_state := ex_liquidated
+    | False =>
+      e = {_eventname : "OnSuccLiqOffFailureState"; caller : _sender};
+      event e
+    end
+  | False =>
+    e = {_eventname : "OnSuccLiqFailureAuth"; caller : _sender};
+    event e
+  end
 end
 
 (* receive only from pr_iss and only as a payment from liquidation of orig. bond *)
 transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
-  z = Uint32 0;
-  ordinary_transfer = builtin eq code z;
+  ordinary_transfer = builtin eq code tr_ordinary_code;
   match ordinary_transfer with
   | True =>
   | False =>
-    db <- dbond;
-    cur_st <- cur_state;
-    is_tech_def = builtin eq cur_st expired_tech_defaulted;
-    match is_tech_def with
+    valid_code = builtin eq code liquidation_code;
+    match valid_code with
     | True =>
-      match db with
-      | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-        valid_auth = builtin eq _sender pr_iss;
-        match valid_auth with
-        | True =>
-          valid_code = builtin eq code tr_liquidation_code;
-          match valid_code with
+      cur_st <- cur_state;
+      is_tech_def = builtin eq cur_st ex_tech_defaulted;
+      match is_tech_def with
+      | True =>
+        db <- dbond;
+        match db with
+        | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+          valid_auth = builtin eq _sender pr_iss;
+          match valid_auth with
           | True =>
-            valid_sender = builtin eq sender liqag;
-            match valid_sender with
-            | True =>
-              accept;
-              msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                    to : swap_contract; tokens : amount; code : tr_liquidation_code};
-              msgs = one_msg msg;
-              send msgs
-            | False =>
-              e = {_eventname : "TransferSuccessFailureSender"; caller : _sender; sender : sender};
-              event e
-            end
+              valid_sender = builtin eq sender liqag;
+              match valid_sender with
+              | True =>
+                accept;
+                msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
+                      to : swap_contract; tokens : amount; code : liquidation_code};
+                msgs = one_msg msg;
+                send msgs
+              | False =>
+                e = {_eventname : "TransferSuccessFailureSender"; caller : _sender; sender : sender};
+                event e
+              end
           | False =>
-            e = {_eventname : "TransferSuccessFailureCode"; caller : _sender; sender : sender};
+            e = {_eventname : "TransferSuccessFailureAuth"; caller : _sender; sender : sender};
             event e
           end
-        | False =>
-          e = {_eventname : "TransferSuccessFailureAuth"; caller : _sender; sender : sender};
-          event e
         end
+      | False =>
+        e = {_eventname : "TransferSuccessFailureState"; caller : _sender; sender : sender};
+        event e
       end
     | False =>
-      e = {_eventname : "TransferSuccessFailureState"; caller : _sender; sender : sender};
+      e = {_eventname : "TransferSuccessFailureCode"; caller : _sender; sender : sender};
       event e
     end
   end
