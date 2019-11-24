@@ -91,28 +91,34 @@ let upd_price =
     let zero_price = builtin lt issued cur_st in
     match zero_price with
     | True =>
-      let z = Uint128 0 in
-      Some {Uint128} z
+      Some {Uint128} zero
     | False =>
-      let ticks_per_year = Uint128 31536000000000 in
-      let ticks_left = builtin sub mat_t cur_time in
-      let ticks_left = builtin to_uint128 ticks_left in
-      match ticks_left with
-      | Some ticks_left =>
-        let tmp1 = builtin mul pr_am ticks_per_year in
-        let tmp2 = Uint128 1000000 in
-        let nominator = builtin mul tmp1 tmp2 in
-        let tmp3 = Uint32 10000 in
-        let tmp4 = builtin add tmp3 apr in
-        let tmp4 = builtin to_uint128 tmp4 in
-        match tmp4 with
-        | Some tmp4 =>
-          let denom = builtin mul tmp4 ticks_left in
-          let ans = builtin div nominator denom in
-          Some {Uint128} ans
+      let before_ex_time = builtin lt cur_time mat_t in
+      match before_ex_time with
+      | False =>
+        Some {Uint128} pr_am
+      | True =>
+        let ticks_left = builtin sub mat_t cur_time in
+        let ticks_left = builtin to_uint128 ticks_left in
+        match ticks_left with
+        | Some ticks_left =>
+          let ticks_per_year = Uint128 31536000 in
+          let tmp1 = builtin mul pr_am ticks_per_year in
+          let tmp2 = Uint128 10000 in
+          let nominator = builtin mul tmp1 tmp2 in
+          let apr = builtin to_uint128 apr in
+          match apr with
+          | Some apr =>
+            let one = Uint128 10000 in
+            let tmp3 = builtin mul ticks_left apr in
+            let tmp4 = builtin mul one ticks_per_year in
+            let denom = builtin add tmp3 tmp4 in
+            let ans = builtin div nominator denom in
+            Some {Uint128} ans
+          | None => None {Uint128}
+          end
         | None => None {Uint128}
         end
-      | None => None {Uint128}
       end
     end
   end
@@ -256,15 +262,15 @@ transition RequestTime()
   send msgs
 end
 
-transition UpdateTime (new_timestamp : Uint32)
+transition OnGetTime (new_timestamp : Uint32)
   valid_auth = builtin eq _sender time_oracle;
   match valid_auth with
   | True =>
     cur_timestamp := new_timestamp;
-    e = {_eventname : "SetTimeSuccess"; caller : _sender; new_timestamp : new_timestamp};
+    e = {_eventname : "OnGetTimeSuccess"; caller : _sender; new_timestamp : new_timestamp};
     event e
   | False =>
-    e = {_eventname : "SetTimeAuthFailure"; caller : _sender};
+    e = {_eventname : "OnGetTimeFailureAuth"; caller : _sender; new_timestamp : new_timestamp};
     event e
   end
 end
@@ -274,18 +280,25 @@ transition GetUpdCurPrice ()
   cur_time <- cur_timestamp;
   cur_db <- dbond;
   cur_st <- cur_state;
-  new_price = upd_price cur_time cur_db cur_st;
-  match new_price with
-  | Some new_price =>
-    cur_price := new_price;
-    msg = { _tag : ""; _recipient : _sender; _amount : zero; upd_price : new_price};
-    msgs = one_msg msg;
-    send msgs;
-    e = {_eventname : "GetCurPrice"; caller : _sender; upd_price : new_price};
-    event e
-  | None =>
-      e = {_eventname : "GetCurPriceFailure"; caller : _sender};
+  valid_state = builtin lt frozen_till_ver cur_st;
+  match valid_state with
+  | True =>
+    new_price = upd_price cur_time cur_db cur_st;
+    match new_price with
+    | Some new_price =>
+      cur_price := new_price;
+      msg = { _tag : "OnGetPrice"; _recipient : _sender; _amount : zero; upd_price : new_price};
+      msgs = one_msg msg;
+      send msgs;
+      e = {_eventname : "GetUpdCurPriceSuccess"; caller : _sender; upd_price : new_price};
       event e
+    | None =>
+        e = {_eventname : "GetUpdCurPriceFailure"; caller : _sender};
+        event e
+    end
+  | False =>
+    e = {_eventname : "GetUpdCurPriceFailureState"; caller : _sender};
+    event e
   end
 end
 
