@@ -19,7 +19,7 @@ let ex_tech_defaulted = Uint32 4
 let ex_liquidated = Uint32 5
 let ex_defaulted = Uint32 6
 
-let tr_ordinary_code : Uint32 = Uint32 0
+let simple_tr_code : Uint32 = Uint32 0
 let pay_off_code : Uint32 = Uint32 1 (* by emitent, to pay off the dbond *)
 let liquidation_code : Uint32 = Uint32 2 (* by liqag to deposit value from orig. bond liquidation *)
 let dbond_deposit_code : Uint32 = Uint32 3 (* by emitent to deposit acuired tokens *)
@@ -240,10 +240,7 @@ transition VerifyDBond ()
         cur_state := issued;
         balances[owner] := suppl;
         e = {_eventname : "VerifyDBondSuccess"; caller : _sender};
-        event e;
-        msg = { _tag : "AddDbond"; _recipient : swap_contract; _amount : zero; dbond : cur_db};
-        msgs = one_msg msg;
-        send msgs
+        event e
       | False =>
         e = {_eventname : "VerifyDBondFailureAuth"; caller : _sender};
         event e
@@ -260,19 +257,6 @@ transition RequestTime()
   msg = { _tag : "SendTime"; _recipient : time_oracle; _amount : zero};
   msgs = one_msg msg;
   send msgs
-end
-
-transition OnGetTime (new_timestamp : Uint32)
-  valid_auth = builtin eq _sender time_oracle;
-  match valid_auth with
-  | True =>
-    cur_timestamp := new_timestamp;
-    e = {_eventname : "OnGetTimeSuccess"; caller : _sender; new_timestamp : new_timestamp};
-    event e
-  | False =>
-    e = {_eventname : "OnGetTimeFailureAuth"; caller : _sender; new_timestamp : new_timestamp};
-    event e
-  end
 end
 
 (*return price in cents, all cur_state cur_timestamp are expected to be up-to-date*)
@@ -325,37 +309,6 @@ transition ClaimDefault()
   end
 end
 
-(* update cur_state inside, time is considered to be up-to-date*)
-transition PayOffDBond ()
-  bal <- balances[owner];
-  match bal with 
-  | Some bal =>
-    cur_db <- dbond;
-    cur_time <- cur_timestamp;
-    cur_st <- cur_state;
-
-    is_iss = builtin eq cur_st issued;
-    match is_iss with
-    | True =>
-      match cur_db with
-      | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-        needed_am = builtin sub suppl bal;
-        needed_am = builtin mul needed_am pr_am;
-        msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                 to : swap_contract; tokens : needed_am; code : pay_off_code};
-        msgs = one_msg msg;
-        send msgs
-      end
-    | False =>
-      e = {_eventname : "RetireBondFailureState"; caller : _sender};
-      event e
-    end
-  | None =>
-    e = {_eventname : "RetireBondFailureBalance"; caller : _sender};
-    event e
-  end
-end
-
 (* is called from swap contract *)
 transition OnSuccPayOff ()
   valid_auth = builtin eq _sender swap_contract;
@@ -365,7 +318,9 @@ transition OnSuccPayOff ()
   | True =>
     match valid_state with
     | True =>
-      cur_state := ex_paid_off
+      cur_state := ex_paid_off;
+      e = {_eventname : "OnSuccPayOffSuccess"; caller : _sender};
+      event e
     | False =>
       e = {_eventname : "OnSuccPayOffFailureState"; caller : _sender};
       event e
@@ -385,7 +340,9 @@ transition OnSuccLiq ()
   | True =>
     match valid_state with
     | True =>
-      cur_state := ex_liquidated
+      cur_state := ex_liquidated;
+      e = {_eventname : "OnSuccLiqSuccess"; caller : _sender};
+      event e
     | False =>
       e = {_eventname : "OnSuccLiqOffFailureState"; caller : _sender};
       event e
@@ -396,49 +353,143 @@ transition OnSuccLiq ()
   end
 end
 
-(* receive only from pr_iss and only as a payment from liquidation of orig. bond *)
-transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
-  ordinary_transfer = builtin eq code tr_ordinary_code;
-  match ordinary_transfer with
+transition OnGetTime (new_timestamp : Uint32)
+  valid_auth = builtin eq _sender time_oracle;
+  match valid_auth with
   | True =>
+    cur_timestamp := new_timestamp;
+    e = {_eventname : "OnGetTimeSuccess"; caller : _sender; new_timestamp : new_timestamp};
+    event e
   | False =>
-    valid_code = builtin eq code liquidation_code;
-    match valid_code with
+    e = {_eventname : "OnGetTimeFailureAuth"; caller : _sender; new_timestamp : new_timestamp};
+    event e
+  end
+end
+
+procedure PayOff(caller : ByStr20, sender : ByStr20, amount : Uint128)
+  valid_sender = builtin eq sender owner;
+  cur_st <- cur_state;
+  valid_state = builtin eq cur_st issued;
+  match valid_sender with
+  | True =>
+    match valid_state with
     | True =>
-      cur_st <- cur_state;
-      is_tech_def = builtin eq cur_st ex_tech_defaulted;
-      match is_tech_def with
-      | True =>
-        db <- dbond;
-        match db with
-        | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
-          valid_auth = builtin eq _sender pr_iss;
-          match valid_auth with
-          | True =>
-              valid_sender = builtin eq sender liqag;
-              match valid_sender with
-              | True =>
-                accept;
-                msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                      to : swap_contract; tokens : amount; code : liquidation_code};
-                msgs = one_msg msg;
-                send msgs
-              | False =>
-                e = {_eventname : "TransferSuccessFailureSender"; caller : _sender; sender : sender};
-                event e
-              end
-          | False =>
-            e = {_eventname : "TransferSuccessFailureAuth"; caller : _sender; sender : sender};
-            event e
-          end
+      accept;
+      db <- dbond;
+      match db with
+      | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+        valid_auth = builtin eq _sender pr_iss;
+        match valid_auth with
+        | True =>
+          msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
+                to : swap_contract; tokens : amount; code : pay_off_code};
+          msgs = one_msg msg;
+          send msgs
+        | False =>
+          e = { _exception : "PayOffInvalidAuth"};
+          throw e
         end
-      | False =>
-        e = {_eventname : "TransferSuccessFailureState"; caller : _sender; sender : sender};
-        event e
       end
     | False =>
-      e = {_eventname : "TransferSuccessFailureCode"; caller : _sender; sender : sender};
-      event e
+      e = { _exception : "PayOffInvalidState"};
+      throw e
+    end
+  | False =>
+    e = { _exception : "PayOffInvalidSender"};
+    throw e
+  end
+end
+
+procedure DBondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
+  valid_sender = builtin eq sender owner;
+  cur_st <- cur_state;
+  valid_state = builtin eq cur_st issued;
+  valid_auth = builtin eq caller _this_address;
+  match valid_sender with
+  | True =>
+    match valid_state with
+    | True =>
+      match valid_auth with
+      | True => 
+        accept;
+        msg = { _tag : "Transfer"; _recipient : _this_address; _amount : zero; 
+              to : swap_contract; tokens : amount; code : dbond_deposit_code};
+        msgs = one_msg msg;
+        send msgs
+      | False =>
+        e = { _exception : "DBondDepInvalidAuth"};
+        throw e
+      end
+    | False =>
+      e = { _exception : "DBondDepInvalidState"};
+      throw e
+    end
+  | False =>
+    e = { _exception : "DBondDepInvalidSender"};
+    throw e
+  end
+end
+
+procedure Liq(caller : ByStr20, sender : ByStr20, amount : Uint128)
+  db <- dbond;
+  match db with
+  | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+    valid_sender = builtin eq sender liqag;
+    valid_auth = builtin eq caller pr_iss;
+    cur_st <- cur_state;
+    valid_state = builtin eq cur_st ex_tech_defaulted;
+    match valid_sender with
+    | True =>
+      match valid_state with
+      | True =>
+        match valid_auth with
+        | True =>
+          accept;
+          msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
+                to : swap_contract; tokens : amount; code : liquidation_code};
+          msgs = one_msg msg;
+          send msgs
+        | False =>
+          e = { _exception : "LiqInvalidAuth"};
+          throw e
+        end
+      | False =>
+        e = { _exception : "LiqInvalidState"};
+        throw e
+      end
+    | False =>
+      e = { _exception : "LiqInvalidSender"};
+      throw e
+    end
+  end
+end
+
+procedure SimpleTransfer(caller : ByStr20, sender : ByStr20, amount : Uint128)
+  accept
+end
+
+(* receive only from pr_iss and only as a payment from liquidation of orig. bond *)
+transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
+  pay_off = builtin eq code pay_off_code;
+  liquidation = builtin eq code liquidation_code;
+  db_dep = builtin eq code dbond_deposit_code;
+  simple_tr = builtin eq code dbond_exchange_code;
+  match pay_off with
+  | True => PayOff _sender sender amount
+  | False =>
+    match liquidation with
+    | True => Liq _sender sender amount
+    | False =>
+      match db_dep with
+      | True => DBondDep _sender sender amount
+      | False =>
+        match simple_tr with
+        | True => SimpleTransfer _sender sender amount
+        | False =>
+          e = { _exception : "InvalidCode"};
+          throw e
+        end
+      end
     end
   end
 end

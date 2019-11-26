@@ -1,11 +1,11 @@
 {
   "scilla_major_version": "0",
-  "gas_remaining": "7051",
+  "gas_remaining": "7243",
   "_accepted": "false",
-  "message":  null,
+  "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
-    { "vname": "cur_state", "type": "Uint32", "value": "2" },
+    { "vname": "cur_state", "type": "Uint32", "value": "5" },
     {
       "vname": "balances",
       "type": "Map (ByStr20) (Uint128)",
@@ -28,17 +28,17 @@
           {
             "constructor": "FiatBondCon",
             "argtypes": [],
-            "arguments": [ "1602324610", "US25152R5F60" ]
+            "arguments": [ "20000000", "US25152R5F60" ]
           },
           "10",
-          "1602324610",
-          "1602324610",
+          "15768000",
+				  "31537000",
           "0xdeadbeefdeadbeef000000000000000000000001",
-          "10000",
+          "100000",
           "0xdeadbeefdeadbeef000000000000000000000002",
           "0xdeadbeefdeadbeef000000000000000000000003",
           "0xdeadbeefdeadbeef000000000000000000000004",
-          "300",
+          "30000",
           "http://sdfsdf.com/sdfsdf"
         ]
       }
@@ -46,16 +46,16 @@
     { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
     { "vname": "cur_price", "type": "Uint128", "value": "0" }
   ],
-  "events": [
+  "events": [ 
     {
-      "_eventname": "VerifyDBondSuccess",
+      "_eventname": "OnSuccLiqSuccess",
       "params": [
         {
           "vname": "caller",
           "type": "ByStr20",
-          "value": "0xdeadbeefdeadbeef000000000000000000000002"
+          "value": "0x0000000000000000000000000000000000000002"
         }
       ]
     }
-  ]
+   ]
 }

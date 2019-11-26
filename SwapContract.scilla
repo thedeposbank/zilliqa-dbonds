@@ -59,18 +59,54 @@ field dbonds : Map ByStr20 (Fcdb) = Emp ByStr20 Fcdb
 field received_p : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_l : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_d : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
-field received_ex : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
 field exchangable : Map ByStr20 Uint32 = Emp ByStr20 Uint32
 
-transition AddDbond (dbond : Fcdb)
-    ex <- exists dbonds[_sender];
-    match ex with
-    | True => 
-        e = {_eventname : "AddDbondFailureAlreadyExists"; caller : _sender; dbond : dbond};
-        event e
+(* made by owner in order to avoid spam *)
+(* all future manipulatons depend on if the dbond was added *)
+transition AddDbond (db_contract : ByStr20, dbond : Fcdb)
+    valid_auth = builtin eq _sender owner;
+    match valid_auth with
+    | True =>
+        ex <- exists dbonds[db_contract];
+        match ex with
+        | True => 
+            e = {_eventname : "AddDbondFailureAlreadyExists"; caller : _sender; db_contract : db_contract};
+            event e
+        | False =>
+            dbonds[db_owner] := dbond;
+            e = {_eventname : "AddDbondSuccess"; caller : _sender; db_contract : db_contract};
+            event e
+        end
     | False =>
-        dbonds[_sender] := dbond;
-        e = {_eventname : "AddDbondSuccess"; caller : _sender; dbond : dbond};
+        e = {_eventname : "AddDbondFailureAuth"; caller : _sender; db_contract : db_contract};
+        event e
+    end
+end
+
+(* used as success notification only while multiple messages are not supported *)
+transition SendSuccPayOff(emitent : ByStr20)
+    valid_auth = builtin eq _sender owner;
+    match valid_auth with
+    | True =>
+        msg = { _tag : "OnSuccPayOff"; _recipient : emitent; _amount : zero};
+        msgs = one_msg msg;
+        send msgs
+    | False =>
+        e = {_eventname : "SendSuccPayOffFailureAuth"; caller : _sender};
+        event e
+    end
+end
+
+(* used as success notification only while multiple messages are not supported *)
+transition SendSuccLiq(emitent : ByStr20)
+    valid_auth = builtin eq _sender owner;
+    match valid_auth with
+    | True =>
+        msg = { _tag : "OnSuccLiq"; _recipient : emitent; _amount : zero};
+        msgs = one_msg msg;
+        send msgs
+    | False =>
+        e = {_eventname : "SendSuccLiqFailureAuth"; caller : _sender};
         event e
     end
 end
@@ -123,7 +159,7 @@ procedure CheckIfPaid(emitent : ByStr20)
     end
 end
 
-(* accumulates price tokens from emitent *)
+(* accepts payment from emitent if enough*)
 procedure AcceptPayOff(caller : ByStr20, sender : ByStr20, amount : Uint128)
     db <- dbonds[sender];
     ex <- exists exchangable[sender];
@@ -184,9 +220,11 @@ procedure AcceptLiquidation(caller : ByStr20, sender : ByStr20, amount : Uint128
     end
 end
 
-procedure AcceptDbondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
-    is_emitent <- exists dbonds[sender];
-    ex <- exists exchangable[sender];
+(* accumulates dbond tokens on the name of emitent *)
+(* accepts transfer initiated by anyone *)
+procedure AcceptDBondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
+    is_emitent <- exists dbonds[caller];
+    ex <- exists exchangable[caller];
     match ex with
     | True =>
         e = { _exception : "AlreadyPaid"; caller : _sender; sender : sender};
@@ -194,15 +232,17 @@ procedure AcceptDbondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
     | False =>
         match is_emitent with
         | True =>
-            valid_auth = builtin eq caller sender;
-            match valid_auth with
-            | True =>
-                accept;
-                received_d[sender] := amount
-            | False =>
-                e = {_exception : "AcceptDbondDepFailureAuth"; caller : _sender; sender : sender};
-                throw e
-            end
+            accept;
+            before <- received_d[caller];
+            match before with
+            | Some before =>
+                res = builtin add amount before;
+                received_d[caller] := res
+            | None =>
+                received_d[caller] := before
+            end;
+            e = {_eventname : "AcceptDBondDepSuccess"; caller : caller; sender : sender};
+            event e
         | False =>
             e = {_exception : "AcceptPayOffFailureUnknownSender"; caller : _sender; sender : sender};
             throw e
@@ -239,7 +279,6 @@ procedure ExchangeDbond(caller : ByStr20, sender : ByStr20, amount : Uint128)
                     total = builtin add l_am p_am;
                     per_db = builtin div total suppl;
                     need_to_send = builtin mul amount per_db;
-                    received_ex[caller][sender] := amount;
                     msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
                         to : sender; tokens : need_to_send; code : Uint32 0};
                     msgs = one_msg msg;
@@ -269,7 +308,7 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
         | False =>
             match db_dep with
             | True =>
-                AcceptDbondDep _sender  sender  amount
+                AcceptDBondDep _sender  sender  amount
             | False =>
                 match db_ex with
                 | True =>
@@ -280,33 +319,5 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
                 end
             end
         end
-    end
-end
-
-(* used as success notification only while multiple messages are not supported *)
-transition SendSuccPayOff(emitent : ByStr20)
-    valid_auth = builtin eq _sender owner;
-    match valid_auth with
-    | True =>
-        msg = { _tag : "OnSuccPayOff"; _recipient : emitent; _amount : zero};
-        msgs = one_msg msg;
-        send msgs
-    | False =>
-        e = {_eventname : "SendSuccPayOffFailureAuth"; caller : _sender};
-        event e
-    end
-end
-
-(* used as success notification only while multiple messages are not supported *)
-transition SendSuccLiq(emitent : ByStr20)
-    valid_auth = builtin eq _sender owner;
-    match valid_auth with
-    | True =>
-        msg = { _tag : "OnSuccLiq"; _recipient : emitent; _amount : zero};
-        msgs = one_msg msg;
-        send msgs
-    | False =>
-        e = {_eventname : "SendSuccLiqFailureAuth"; caller : _sender};
-        event e
     end
 end
