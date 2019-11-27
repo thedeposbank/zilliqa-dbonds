@@ -11,6 +11,9 @@ const fs = require('fs');
 const json1 = JSON.parse(fs.readFileSync(process.argv[2], {encoding:'utf8'}));
 const json2 = JSON.parse(fs.readFileSync(process.argv[3], {encoding:'utf8'}));
 
+delete json1.gas_remaining;
+delete json2.gas_remaining;
+
 // do not sort values of 'argtypes' and 'arguments' properties
 function sequenceSensitive(propertyName) {
 	return ['argtypes', 'arguments'].some(s => s == propertyName);
