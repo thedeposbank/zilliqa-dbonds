@@ -20,9 +20,9 @@ let ex_liquidated = Uint32 5
 let ex_defaulted = Uint32 6
 
 let simple_tr_code : Uint32 = Uint32 0
-let pay_off_code : Uint32 = Uint32 1 (* by emitent, to pay off the dbond *)
+let pay_off_code : Uint32 = Uint32 1 (* by owner, to pay off the dbond *)
 let liquidation_code : Uint32 = Uint32 2 (* by liqag to deposit value from orig. bond liquidation *)
-let dbond_deposit_code : Uint32 = Uint32 3 (* by emitent to deposit acuired tokens *)
+let dbond_deposit_code : Uint32 = Uint32 3 (* by owner to deposit acuired tokens *)
 let dbond_exchange_code : Uint32 = Uint32 4 (* by dbond holder *)
 
 let zero = Uint128 0
@@ -396,36 +396,6 @@ procedure PayOff(caller : ByStr20, sender : ByStr20, amount : Uint128)
     end
   | False =>
     e = { _exception : "PayOffInvalidSender"};
-    throw e
-  end
-end
-
-procedure DBondDep(caller : ByStr20, sender : ByStr20, amount : Uint128)
-  valid_sender = builtin eq sender owner;
-  cur_st <- cur_state;
-  valid_state = builtin eq cur_st issued;
-  valid_auth = builtin eq caller _this_address;
-  match valid_sender with
-  | True =>
-    match valid_state with
-    | True =>
-      match valid_auth with
-      | True => 
-        accept;
-        msg = { _tag : "Transfer"; _recipient : _this_address; _amount : zero; 
-              to : swap_contract; tokens : amount; code : dbond_deposit_code};
-        msgs = one_msg msg;
-        send msgs
-      | False =>
-        e = { _exception : "DBondDepInvalidAuth"};
-        throw e
-      end
-    | False =>
-      e = { _exception : "DBondDepInvalidState"};
-      throw e
-    end
-  | False =>
-    e = { _exception : "DBondDepInvalidSender"};
     throw e
   end
 end

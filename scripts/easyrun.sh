@@ -4,12 +4,12 @@
 
 function print_usage_and_exit
 {
-    echo "Usage: $0 test_number"
+    echo "Usage: $0 contract_dir test_number"
     exit 1
 }
 
 function run_test() {
-
+	export dir
 	if [ $# != 1 ] ; then
 		print_usage_and_exit
 	fi
@@ -23,11 +23,11 @@ function run_test() {
 	title "running test in $test_dir" 
 
 	scilla-runner \
-		-init tests/init.json \
+		-init $test_dir/../init.json \
 		-istate $test_dir/state.json \
 		-imessage $test_dir/message.json \
 		-iblockchain $test_dir/blockchain.json \
-		-i $contract.scilla \
+		-i $test_dir/../../$dir.scilla \
 		-o $test_dir/output.json \
 		-gaslimit 8000
 
@@ -48,12 +48,14 @@ function run_test() {
 	fi
 }
 
+dir=$1
+shift
 if [ "$1" = all ] ; then
-	for i in tests/*-*
+	for i in $dir/tests/*-*
 	do
 		run_test $i
 	done
 else
-	test_dir=$(echo "tests/$1-"*)
+	test_dir=$(echo "$dir/tests/$1-"*)
 	run_test $test_dir
 fi

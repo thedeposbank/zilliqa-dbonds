@@ -1,7 +1,5 @@
 #!/bin/bash
 
-contract=dBonds
-
 function title() {
 	title="# $1 #"
 	hashes=`echo "$title" | tr '[\040-\377]' '[#*]'`
