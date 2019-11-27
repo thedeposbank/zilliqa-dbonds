@@ -1,0 +1,55 @@
+{
+  "scilla_major_version": "0",
+  "gas_remaining": "7070",
+  "_accepted": "false",
+  "message": null,
+  "states": [
+    { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "balances", "type": "Map (ByStr20) (Uint128)", "value": [] },
+    {
+      "vname": "allowed",
+      "type": "Map (ByStr20) (Map (ByStr20) (Uint128))",
+      "value": []
+    },
+    {
+      "vname": "dbond",
+      "type": "Fcdb",
+      "value": {
+        "constructor": "FcdbCon",
+        "argtypes": [],
+        "arguments": [
+          {
+            "constructor": "FiatBondCon",
+            "argtypes": [],
+            "arguments": [ "1602324610", "US25152R5F60" ]
+          },
+          "10",
+          "1602324610",
+          "1602324610",
+          "0xdeadbeefdeadbeef000000000000000000000001",
+          "10000",
+          "0xdeadbeefdeadbeef000000000000000000000002",
+          "0xdeadbeefdeadbeef000000000000000000000003",
+          "0xdeadbeefdeadbeef000000000000000000000004",
+          "300",
+          "http://sdfsdf.com/sdfsdf"
+        ]
+      }
+    },
+    { "vname": "cur_state", "type": "Uint32", "value": "1" },
+    { "vname": "cur_timestamp", "type": "Uint32", "value": "0" },
+    { "vname": "cur_price", "type": "Uint128", "value": "0" }
+  ],
+  "events": [
+    {
+      "_eventname": "VerifyDBondFailureAuth",
+      "params": [
+        {
+          "vname": "caller",
+          "type": "ByStr20",
+          "value": "0xdeadbeefdeadbeef000000000000000000000123"
+        }
+      ]
+    }
+  ]
+}

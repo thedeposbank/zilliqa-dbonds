@@ -1,0 +1,32 @@
+[
+	{
+		"vname": "dbonds",
+		"type": "Map ByStr20 (Fcdb)",
+		"value": []
+	},
+	{
+		"vname": "received_p",
+		"type": "Map (ByStr20) (Uint128)",
+		"value": []
+	},
+	{
+		"vname": "received_l",
+		"type": "Map (ByStr20) (Uint128)",
+		"value": []
+	},
+	{
+		"vname": "received_d",
+		"type": "Map (ByStr20) (Uint128)",
+		"value": []
+	},
+	{
+		"vname": "exchangable",
+		"type": "Map (ByStr20) (Uint32)",
+		"value": []
+	},
+	{
+		"vname": "_balance",
+		"type": "Uint128",
+		"value": "0"
+	}
+]
