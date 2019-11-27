@@ -24,7 +24,16 @@ let le_int =
       | True => True
       | False => False
       end
-end
+    end
+
+let min =
+    fun(x : Uint128) =>
+    fun(y : Uint128) =>
+    let less = builtin lt x y in
+    match less with
+    | True => x
+    | False => y
+    end
 
 let simple_tr_code : Uint32 = Uint32 0 (* by anyone *)
 let pay_off_code : Uint32 = Uint32 1 (* by dbond contract, to pay off the dbond *)
@@ -241,38 +250,40 @@ procedure AcceptDBondDep(db_contract : ByStr20, sender : ByStr20, amount : Uint1
 end
 
 (* makes an exchange or aborts *)
-procedure ExchangeDbond(caller : ByStr20, sender : ByStr20, amount : Uint128)
+procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint128)
     (* caller here is supposed to be dbond contract *)
-    is_ex <- exists exchangable[caller];
+    is_ex <- exists exchangable[db_contract];
     match is_ex with
     | True =>
-        db <- dbonds[caller];
-        p <- received_p[caller];
-        l <- received_l[caller];
-        p_am = Uint128 0;
-        l_am = Uint128 0;
-        match p with
-        | Some p =>
-            p_am = p
-        | None =>
-        end;
-        match l with
-        | Some l =>
-            l_am = l
-        | None =>
-        end;
+        db <- dbonds[db_contract];
+        p <- received_p[db_contract];
+        l <- received_l[db_contract];
+        d <- received_d[db_contract];
+        d_am = match d with | Some d => d
+                            | None => Uint128 0 end;
+        p_am = match p with | Some p => p
+                            | None => Uint128 0 end;
+        l_am = match l with | Some l => l
+                            | None => Uint128 0 end;
         match db with
         | Some db =>
                 match db with
                 | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
                     accept;
-                    total = builtin add l_am p_am;
-                    per_db = builtin div total suppl;
-                    need_to_send = builtin mul amount per_db;
+                    total_p = builtin add l_am p_am;
+                    denom = builtin sub suppl d_am;
+                    max_cost = builtin mul denom pr_am;
+                    total = min total_p max_cost;
+                    nom = builtin mul total amount;
+                    need_to_send = builtin div nom denom; 
                     msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
                         to : sender; tokens : need_to_send; code : Uint32 0};
                     msgs = one_msg msg;
-                    send msgs
+                    new_d_dep = builtin add d_am amount;
+                    received_d[db_contract] := new_d_dep;
+                    send msgs;
+                    e = {_eventname : "AcceptDBondDepSuccess"; db_contract : db_contract; sender : sender};
+                    event e
                 end
         | None =>
         end
@@ -302,7 +313,7 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
             | False =>
                 match db_ex with
                 | True =>
-                    ExchangeDbond _sender  sender  amount
+                    ExchangeDBond _sender  sender  amount
                 | False =>
                     e = { _exception : "InvalidCode"};
                     throw e
