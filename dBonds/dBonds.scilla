@@ -66,6 +66,7 @@ type Fcdb =
             Uint32 (*retire timestamp*)
             ByStr20 (*issuer of unit of account*)
             Uint128 (*number of unit of account tokens to pay off at maturity, 100 goes for 1 token*)
+                    (*is set with respect to price decimal, ex. decimals=2 => 200 equals 2 per one dbond token*)
             ByStr20 (*verification account*)
             ByStr20 (*accounts served as counterparty*)
             ByStr20 (*account served as liquidation agent*)
@@ -259,7 +260,8 @@ transition RequestTime()
   send msgs
 end
 
-(*return price in cents, all cur_state cur_timestamp are expected to be up-to-date*)
+(*return price in decimals per one dbond token*)
+(*all cur_state cur_timestamp are expected to be up-to-date*)
 transition GetUpdCurPrice ()
   cur_time <- cur_timestamp;
   cur_db <- dbond;
