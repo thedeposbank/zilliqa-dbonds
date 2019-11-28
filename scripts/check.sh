@@ -2,6 +2,16 @@
 
 . ./scripts/functions.sh
 
-title checking
+function check() {
+	title "checking $1"
+	scilla-checker -gaslimit 8000 $1 
+}
 
-scilla-checker -gaslimit 2000 ${sdir}/${contract}.scilla 
+if [ -n "$1" ] ; then
+	check $1/*.scilla
+else
+	for i in StableCoinSimulator SwapContract TimeOracle dBonds
+	do
+		check $i/*.scilla
+	done
+fi
