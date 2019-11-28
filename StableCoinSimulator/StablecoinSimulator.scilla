@@ -44,7 +44,7 @@ let one_msg =
 (*             The contract definition             *)
 (***************************************************)
 
-contract FungibleToken
+contract StablecoinSimulator
 (owner : ByStr20,
  total_tokens : Uint128,
  decimals : Uint32,
