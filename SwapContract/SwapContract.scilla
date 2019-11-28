@@ -226,7 +226,7 @@ procedure AcceptDBondDep(db_contract : ByStr20, sender : ByStr20, amount : Uint1
                 res = builtin add amount before;
                 received_d[db_contract] := res
             | None =>
-                received_d[db_contract] := before
+                received_d[db_contract] := amount
             end;
             e = {_eventname : "AcceptDBondDepSuccess"; db_contract : db_contract; sender : sender};
             event e
