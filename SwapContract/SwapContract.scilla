@@ -93,6 +93,8 @@ transition AddDBond (db_contract : ByStr20, dbond : Fcdb)
     end
 end
 
+
+
 (* either accepts and exchangable = True or reverts the chain *)
 (* if sent more, sends the change back to emitent *)
 procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
