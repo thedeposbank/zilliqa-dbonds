@@ -66,6 +66,7 @@ type Fcdb =
             Uint32 (*retire timestamp*)
             ByStr20 (*issuer of unit of account*)
             Uint128 (*number of unit of account tokens to pay off at maturity, 100 goes for 1 token*)
+                    (*is set with respect to price decimal, ex. decimals=2 => 200 equals 2 per one dbond token*)
             ByStr20 (*verification account*)
             ByStr20 (*accounts served as counterparty*)
             ByStr20 (*account served as liquidation agent*)
@@ -259,7 +260,8 @@ transition RequestTime()
   send msgs
 end
 
-(*return price in cents, all cur_state cur_timestamp are expected to be up-to-date*)
+(*return price in decimals per one dbond token*)
+(*all cur_state cur_timestamp are expected to be up-to-date*)
 transition GetUpdCurPrice ()
   cur_time <- cur_timestamp;
   cur_db <- dbond;
@@ -438,11 +440,9 @@ procedure SimpleTransfer(caller : ByStr20, sender : ByStr20, amount : Uint128)
   accept
 end
 
-(* receive only from pr_iss and only as a payment from liquidation of orig. bond *)
 transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
   pay_off = builtin eq code pay_off_code;
   liquidation = builtin eq code liquidation_code;
-  db_dep = builtin eq code dbond_deposit_code;
   simple_tr = builtin eq code dbond_exchange_code;
   match pay_off with
   | True => PayOff _sender sender amount
@@ -450,15 +450,11 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
     match liquidation with
     | True => Liq _sender sender amount
     | False =>
-      match db_dep with
-      | True => DBondDep _sender sender amount
+      match simple_tr with
+      | True => SimpleTransfer _sender sender amount
       | False =>
-        match simple_tr with
-        | True => SimpleTransfer _sender sender amount
-        | False =>
-          e = { _exception : "InvalidCode"};
-          throw e
-        end
+        e = { _exception : "InvalidCode"};
+        throw e
       end
     end
   end

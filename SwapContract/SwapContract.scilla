@@ -93,19 +93,7 @@ transition AddDBond (db_contract : ByStr20, dbond : Fcdb)
     end
 end
 
-(* used as success notification only while multiple messages are not supported *)
-transition SendSuccLiq(emitent : ByStr20)
-    valid_auth = builtin eq _sender owner;
-    match valid_auth with
-    | True =>
-        msg = { _tag : "OnSuccLiq"; _recipient : emitent; _amount : zero};
-        msgs = one_msg msg;
-        send msgs
-    | False =>
-        e = {_eventname : "SendSuccLiqFailureAuth"; caller : _sender};
-        event e
-    end
-end
+
 
 (* either accepts and exchangable = True or reverts the chain *)
 (* if sent more, sends the change back to emitent *)
@@ -238,7 +226,7 @@ procedure AcceptDBondDep(db_contract : ByStr20, sender : ByStr20, amount : Uint1
                 res = builtin add amount before;
                 received_d[db_contract] := res
             | None =>
-                received_d[db_contract] := before
+                received_d[db_contract] := amount
             end;
             e = {_eventname : "AcceptDBondDepSuccess"; db_contract : db_contract; sender : sender};
             event e
