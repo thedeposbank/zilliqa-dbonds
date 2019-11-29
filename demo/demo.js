@@ -9,7 +9,10 @@ const blockchain = require('./blockchain');
 function printUsage() {
 	console.log('\nUsage:\n\tdemo.js deploy {contract name}');
 	console.log('\tdemo.js run {test case name}');
-	console.log('\tdemo.js serve\n');
+	console.log('\tdemo.js serve');
+	console.log('\tdemo.js scenario');
+	console.log('\tdemo.js show {contract name}');
+	console.log('');
 	process.exit(1);
 }
 
@@ -32,6 +35,11 @@ switch(process.argv[2]) {
 		break;
 	case 'scenario':
 		runScenario();
+		break;
+	case 'show':
+		if(process.argv.lengh < 4)
+			printUsage();
+		showState(process.argv[3]);
 		break;
 	default:
 		printUsage();
@@ -87,10 +95,18 @@ async function callTransition(callerName, contractName, transition, args) {
 	for(let vname in vnames) {
 		if(!args[vnames] == undefined)
 			new Error('undefined argument ' + vname);
-		argsArray.push({ vname, type: vnames[vname], value: args[vname] });
+		const v = { vname, type: vnames[vname], value: args[vname] };
+		if(v.type == 'ByStr20' && v.value.slice(0, 2) != '0x')
+			v.value = config.accounts[v.value].address;
+		argsArray.push(v);
 	}
 	const tx = await blockchain.runTransition(contractName, transition, argsArray, callerName);
 	console.log('done, tx.id:', tx.id);
+}
+
+async function showState(contractName) {
+	const state = await blockchain.getState(config.contracts[contractName].address);
+	console.log(JSON.stringify(state, null, 2));
 }
 
 async function runServer() {

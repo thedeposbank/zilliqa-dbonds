@@ -11,16 +11,14 @@ const zilliqa = new Zilliqa(config.apiUrl);
 const msgVersion = 1; // current msgVersion
 const VERSION = bytes.pack(config.chainId, msgVersion);
 
-zilliqa.wallet.addByPrivateKey(config.deployer.privateKey);
-
-const address = getAddressFromPrivateKey(config.deployer.privateKey);
-// console.log(`My account address is: ${address}`);
-// console.log(`My account bech32 address is: ${toBech32Address(address)}`);
+for(let acc in config.accounts) {
+	zilliqa.wallet.addByPrivateKey(config.accounts[acc].privateKey);
+}
 
 async function getGasPrice() {
 	const minGasPrice = await zilliqa.blockchain.getMinimumGasPrice();
 	console.log(`Current Minimum Gas Price: ${minGasPrice.result}`);
-	const myGasPrice = units.toQa("1100", units.Units.Li); // Gas Price that will be used by all transactions
+	const myGasPrice = units.toQa("1000", units.Units.Li); // Gas Price that will be used by all transactions
 	console.log(`My Gas Price ${myGasPrice.toString()}`);
 	const isGasSufficient = myGasPrice.gte(new BN(minGasPrice.result)); // Checks if your gas price is less than the minimum gas price
 	console.log(`Is the gas price sufficient? ${isGasSufficient}`);
@@ -64,6 +62,7 @@ async function getState(address) {
 async function runTransition(address, transition, args, caller) {
 	if(address.slice(0, 2) != '0x')
 		address = config.contracts[address].address;
+	const gasPrice = await getGasPrice();
 	const contract = zilliqa.contracts.at(address);
 	const txParams = {
 		version: VERSION,
@@ -77,7 +76,6 @@ async function runTransition(address, transition, args, caller) {
 		txParams.pubKey = zilliqa.wallet.accounts[config.accounts[caller].address].publicKey;
 	}
 
-	const gasPrice = await getGasPrice();
 	return await contract.call(transition, args, txParams);
 }
 
