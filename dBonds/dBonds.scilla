@@ -255,7 +255,7 @@ end
 
 (* public transition to update current time *)
 transition RequestTime()
-  msg = { _tag : "SendTime"; _recipient : time_oracle; _amount : zero};
+  msg = { _tag : "SendTimestamp"; _recipient : time_oracle; _amount : zero};
   msgs = one_msg msg;
   send msgs
 end

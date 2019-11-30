@@ -17,11 +17,11 @@ for(let acc in config.accounts) {
 
 async function getGasPrice() {
 	const minGasPrice = await zilliqa.blockchain.getMinimumGasPrice();
-	console.log(`Current Minimum Gas Price: ${minGasPrice.result}`);
+	// console.log(`Current Minimum Gas Price: ${minGasPrice.result}`);
 	const myGasPrice = units.toQa("1000", units.Units.Li); // Gas Price that will be used by all transactions
-	console.log(`My Gas Price ${myGasPrice.toString()}`);
+	// console.log(`My Gas Price ${myGasPrice.toString()}`);
 	const isGasSufficient = myGasPrice.gte(new BN(minGasPrice.result)); // Checks if your gas price is less than the minimum gas price
-	console.log(`Is the gas price sufficient? ${isGasSufficient}`);
+	// console.log(`Is the gas price sufficient? ${isGasSufficient}`);
 	return myGasPrice;
 }
 
@@ -33,7 +33,7 @@ async function deployContract(code, init) {
 	const txParams = {
 		version: VERSION,
 		gasPrice: myGasPrice,
-		gasLimit: Long.fromNumber(60000)
+		gasLimit: Long.fromNumber(42000)
 	};
 
 	const [deployTx, hello] = await contract.deploy(txParams);
@@ -68,7 +68,7 @@ async function runTransition(address, transition, args, caller) {
 		version: VERSION,
 		amount: new BN(0),
 		gasPrice,
-		gasLimit: Long.fromNumber(40000)
+		gasLimit: Long.fromNumber(10000)
 	};
 	if(caller) {
 		if(!zilliqa.wallet.accounts[config.accounts[caller].address])

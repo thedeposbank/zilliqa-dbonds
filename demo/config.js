@@ -43,6 +43,13 @@ const accounts = {
 	}
 };
 
+const contractAddresses = {
+	dBonds:       '0xfec0773D38EE36199f3aC43F29262e1F90e6C9af',
+	stableCoin:   '0x04f9b4fb26D0863D5cfB3e2e29BE1e7523E18456',
+	swapContract: '0xa57f40CC8Ce00909D39dd0390a41C1BE5928661C',
+	timeOracle:   '0x290024B1adD6DdFB646B983C1Aab38B0b7b0792d'
+};
+
 const config = {
 	accounts,
 	deployer: accounts.dBondsOwner,
@@ -51,6 +58,7 @@ const config = {
 	contracts: {
 		dBonds: {
 			fileName: './dBonds/dBonds.scilla',
+			address: contractAddresses.dBonds,
 			init: [
 				{ 
 					vname: "_scilla_version",
@@ -80,18 +88,32 @@ const config = {
 				{
 					vname: "time_oracle",
 					type: "ByStr20",
-					value: "0x8f3269FE2a0b90f1233233f5e976B82168972690"
+					value: contractAddresses.timeOracle.toLowerCase()
 				},
 				{
 					vname: "swap_contract",
 					type: "ByStr20",
-					value: "0x0000000000000000000000000000000000000002"
+					value: contractAddresses.swapContract.toLowerCase()
 				}
-			]
+			],
+			transitions: {
+				CreateUpdateDBond: {
+					init_dbond: 'Fcdb'
+				},
+				FreezeTillVer: {},
+				VerifyDBond: {},
+				RequestTime: {},
+				GetUpdCurPrice: {},
+				Transfer: {
+					to: 'ByStr20',
+					tokens: 'Uint128',
+					code: 'Uint32'
+				}
+			}
 		},
 		stableCoin: {
 			fileName: './StableCoinSimulator/StablecoinSimulator.scilla',
-			address: '0x04f9b4fb26D0863D5cfB3e2e29BE1e7523E18456',
+			address: contractAddresses.stableCoin,
 			init: [
 				{ 
 					vname: "_scilla_version",
@@ -134,6 +156,7 @@ const config = {
 		},
 		swapContract: {
 			fileName: './SwapContract/SwapContract.scilla',
+			address: contractAddresses.swapContract,
 			init: [
 				{ 
 					vname: "_scilla_version",
@@ -145,11 +168,17 @@ const config = {
 					type: "ByStr20", 
 					value: accounts.swapContractOwner.address.toLowerCase()
 				}
-			]
+			],
+			transitions: {
+				AddDBond: {
+					db_contract: 'ByStr20',
+					dbond: 'Fcdb'
+				}
+			}
 		},
 		timeOracle: {
 			fileName: './TimeOracle/TimeOracle.scilla',
-			address: '0x8f3269FE2a0b90f1233233f5e976B82168972690',
+			address: contractAddresses.timeOracle,
 			init: [
 				{ 
 					vname: "_scilla_version",
@@ -161,7 +190,12 @@ const config = {
 					type: "ByStr20", 
 					value: accounts.timeOracleOwner.address.toLowerCase()
 				}
-			]
+			],
+			transitions: {
+				UpdateTime: {
+					new_timestamp: 'Uint32'
+				}
+			}
 		},
 		test: {
 			fileName: './crowdfunding.scilla',
@@ -211,7 +245,7 @@ const config = {
 								]
 							},
 							"10",
-							"1602324610",
+							"1602000000",
 							"1602324610",
 							"0xdeadbeefdeadbeef000000000000000000000001",
 							"10000",
@@ -228,6 +262,7 @@ const config = {
 	}
 };
 
-const privateConfig = require('./config-private.js');
+// const privateConfig = require('./config-private.js');
+// Object.assign(config, privateConfig);
 
-module.exports = Object.assign(config, privateConfig);
+module.exports = config;
