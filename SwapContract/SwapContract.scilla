@@ -54,7 +54,7 @@ type Fcdb =
             Uint32 (*maturity timestamp*)
             Uint32 (*retire timestamp*)
             ByStr20 (*issuer of unit of account*)
-            Uint128 (*number of unit of account tokens to pay off at maturity, 100 goes for 1 token*)
+            Uint128 (*number of unit of account tokens to pay off at maturity with decimals (ex. 100 goes for 1)*)
             ByStr20 (*verification account*)
             ByStr20 (*accounts served as counterparty*)
             ByStr20 (*account served as liquidation agent*)
@@ -70,6 +70,7 @@ field received_p : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_l : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_d : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field exchangable : Map ByStr20 (Uint32) = Emp ByStr20 Uint32
+field decimals : Uint32 = Uint32 4
 
 (* made by owner in order to avoid spam *)
 (* all future manipulatons depend on if the dbond was added *)
@@ -93,8 +94,6 @@ transition AddDBond (db_contract : ByStr20, dbond : Fcdb)
     end
 end
 
-
-
 (* either accepts and exchangable = True or reverts the chain *)
 (* if sent more, sends the change back to emitent *)
 procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
@@ -108,9 +107,13 @@ procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
     | Some db =>
         match db with 
         | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
+            ten = Uint128 10;    
+            dec <- decimals;
+            factor = builtin pow ten dec;
             left = builtin sub suppl db_am;
             needed = builtin mul left pr_am;
-            is_paid = le_int needed amount;
+            received = builtin mul amount factor;
+            is_paid = le_int needed received;
             match is_paid with
             | True =>
                 true = Uint32 1;
@@ -270,7 +273,7 @@ procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint12
                     new_d_dep = builtin add d_am amount;
                     received_d[db_contract] := new_d_dep;
                     send msgs;
-                    e = {_eventname : "AcceptDBondDepSuccess"; db_contract : db_contract; sender : sender};
+                    e = {_eventname : "ExchangeDBondSuccess"; db_contract : db_contract; sender : sender};
                     event e
                 end
         | None =>

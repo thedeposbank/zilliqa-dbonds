@@ -10,6 +10,7 @@
   },
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "decimals", "type": "Uint32", "value": "4" },
     {
       "vname": "dbonds",
       "type": "Map (ByStr20) (Fcdb)",
@@ -25,7 +26,7 @@
                 "argtypes": [],
                 "arguments": [ "20000000", "US25152R5F60" ]
               },
-              "10",
+              "100000",
               "15768000",
               "31537000",
               "0xdeadbeefdeadbeef000000000000000000000001",
@@ -55,7 +56,7 @@
       "vname": "received_d",
       "type": "Map (ByStr20) (Uint128)",
       "value": [
-        { "key": "0xabfeccdc9012345678901234567890f777567890", "val": "2" }
+        { "key": "0xabfeccdc9012345678901234567890f777567890", "val": "20000" }
       ]
     },
     {
