@@ -3,7 +3,7 @@
   "gas_remaining": "7238",
   "_accepted": "false",
   "message": {
-    "_tag": "SendTime",
+    "_tag": "SendTimestamp",
     "_amount": "0",
     "_recipient": "0x0000000000000000000000000000000000000001",
     "params": []

@@ -26,7 +26,6 @@ async function getGasPrice() {
 }
 
 async function deployContract(code, init) {
-	console.log('init:', init);
 	const myGasPrice = await getGasPrice();
 
 	const contract = zilliqa.contracts.new(code, init);
@@ -36,14 +35,10 @@ async function deployContract(code, init) {
 		gasLimit: Long.fromNumber(42000)
 	};
 
-	const [deployTx, hello] = await contract.deploy(txParams);
+	const [deployTx, hello] = await contract.deploy(txParams, 33, 1000, false);
+	console.log('deployment tx receipt: %o', deployTx.txParams.receipt);
 
 	if(contract.isDeployed()) {
-		// Introspect the state of the underlying transaction
-		console.log(`Deployment Transaction ID: ${deployTx.id}`);
-		console.log(`Deployment Transaction Receipt: ${deployTx.txParams.receipt}`);
-		// Get the deployed contract address
-		console.log('The contract address is:', hello.address);
 		return { tx: deployTx, address: hello.address };
 	}
 	return null;
@@ -76,7 +71,7 @@ async function runTransition(address, transition, args, caller) {
 		txParams.pubKey = zilliqa.wallet.accounts[config.accounts[caller].address].publicKey;
 	}
 
-	return await contract.call(transition, args, txParams);
+	return await contract.call(transition, args, txParams, 33, 1000, false);
 }
 
 module.exports = {
