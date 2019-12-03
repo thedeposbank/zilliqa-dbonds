@@ -44,10 +44,10 @@ const accounts = {
 };
 
 const contractAddresses = {
-	dBonds:       '0x2E3A27bBE322fA46e5B9Fe206d2719427ae58F5C',
-	stableCoin:   '0x4947d6Ae666299Ef3a4F1807d9548aa9c4150A3e',
-	swapContract: '0x8d2D645ead21519df3c741deEfffE14Fb6B34FfD',
-	timeOracle:   '0x3464dA68A6b2c74cf05c3a51f77dF2286c7B669d'
+	dBonds:       '0xA5545D91348345ac89D8A7506235a0F4774E9fFc',
+	stableCoin:   '0x7953ef8Eadf418e82d02eF4dc21095606fAeb3E6',
+	swapContract: '0x46B0E4C01a96D71c008C5065C5Ccd5cb7004608f',
+	timeOracle:   '0x005EBA2711937162A5AB5FBf8ec9364FB35aCf91'
 };
 
 const config = {
@@ -73,7 +73,7 @@ const config = {
 				{
 					vname: "decimals",
 					type: "Uint32" ,
-					value: "0"
+					value: "4"
 				},
 				{ 
 					vname: "name",

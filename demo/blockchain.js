@@ -35,7 +35,7 @@ async function deployContract(code, init) {
 		gasLimit: Long.fromNumber(42000)
 	};
 
-	const [deployTx, hello] = await contract.deploy(txParams, 33, 1000, false);
+	const [deployTx, hello] = await contract.deploy(txParams, 33, 1000, true);
 	console.log('deployment tx receipt: %o', deployTx.txParams.receipt);
 
 	if(contract.isDeployed()) {
@@ -71,7 +71,7 @@ async function runTransition(address, transition, args, caller) {
 		txParams.pubKey = zilliqa.wallet.accounts[config.accounts[caller].address].publicKey;
 	}
 
-	return await contract.call(transition, args, txParams, 33, 1000, false);
+	return await contract.call(transition, args, txParams, 33, 1000, true);
 }
 
 module.exports = {

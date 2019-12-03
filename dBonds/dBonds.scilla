@@ -193,7 +193,8 @@ transition CreateUpdateDBond (init_dbond : Fcdb)
     not_iss = builtin eq cur_st not_issued;
     match not_iss with
     | True =>
-      valid_dec = builtin eq decimals required_decimals;
+      req_dec <- required_decimals;
+      valid_dec = builtin eq decimals req_dec;
       match valid_dec with
       | True =>
         dbond := init_dbond;

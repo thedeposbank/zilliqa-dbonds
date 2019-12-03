@@ -76,6 +76,10 @@ function addressToName(address) {
 	return address;
 }
 
+function stringify(data, convert, spaces) {
+	return JSON.stringify(data, convert, spaces).replace(/"(0x[0-9a-f]{40})"/gi, (match, addr) => ('address:'+addressToName(addr)));
+}
+
 async function deploy(contractName) {
 	if(!config.contracts[contractName]) {
 		debug('unknown contract name "%s"', contractName);
@@ -113,8 +117,8 @@ async function runTest(testName) {
 
 async function callTransition(callerName, contractName, transition, args) {
 
-	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, JSON.stringify(args, null, 2));
-	// pause('press any key');
+	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, stringify(args, null, 2));
+	// await pause('press any key');
 	if(!config.accounts[callerName])
 		throw new Error('unknown caller name ' + callerName);
 	if(!config.contracts[contractName])
@@ -134,7 +138,7 @@ async function callTransition(callerName, contractName, transition, args) {
 		argsArray.push(v);
 	}
 	const tx = await blockchain.runTransition(contractName, transition, argsArray, callerName);
-	debug('done, tx.id: %s, receipt: %s', tx.id, JSON.stringify(tx.txParams.receipt, null, 2));
+	debug('done, tx.id: %s, receipt: %s', tx.id, stringify(tx.txParams.receipt, null, 2));
 	if(!tx.isConfirmed())
 		throw new Error('tx is not confirmed!');
 }
@@ -145,8 +149,7 @@ async function showState(contractName, comment) {
 	else
 		debug('state of contract %s:', contractName);
 	const state = await blockchain.getState(config.contracts[contractName].address);
-	const stateString = JSON.stringify(state, null, 2).replace(/"(0x[0-9a-f]{40})"/gi, (match, addr) => ('address:'+addressToName(addr)));
-	console.log(stateString);
+	console.log(stringify(state, null, 2));
 	console.log();
 	return state;
 }
@@ -221,7 +224,7 @@ async function runScenario() {
 					"US25152R5F60"
 				]
 			},
-			"5",
+			"50000",
 			maturityTimestamp.toString(),
 			retireTimestamp.toString(),
 			config.contracts.stableCoin.address,
@@ -251,7 +254,7 @@ async function runScenario() {
 					],
 					"constructor": "FiatBondCon"
 				},
-				"5",
+				"50000",
 				maturityTimestamp.toString(),
 				retireTimestamp.toString(),
 				config.contracts.stableCoin.address,
@@ -274,7 +277,7 @@ async function runScenario() {
 	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
 	await showState('dBonds');
 
-	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: '4', code: '0'});
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: '40000', code: '0'});
 	state = await showState('dBonds');
 	const cur_price = state.cur_price;
 	// const cur_price = 10000;
@@ -291,20 +294,22 @@ async function runScenario() {
 	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
 	await showState('stableCoin');
 
-	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '1', code: '3'});
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
 	state = await showState('dBonds');
+	const payoffPrice = parseInt(state.dbond.arguments[5]);
 	await showState('swapContract');
 	await showState('stableCoin');
-	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(parseInt(state.dbond.arguments[5]) * 4).toString(), code: '1'});
+
+	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
 	await showState('dBonds');
 	await showState('swapContract');
 
-	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '2', code: '4'});
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
 	await showState('dBonds');
 	await showState('stableCoin');
 	await showState('swapContract');
 
-	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '2', code: '4'});
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
 	await showState('dBonds');
 	await showState('stableCoin');
 	await showState('swapContract');
