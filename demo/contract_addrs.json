@@ -1,0 +1,6 @@
+{
+	"dBonds":       "0xfA29f311bAEa10E28Fb06EBAAf05BFF1DC663d68",
+	"stableCoin":   "0xa8C0b96507dd07d05c0e02b3A3d1eC1dC2781b04",
+	"swapContract": "0x50A3B7D230C08841DE29b006F16Dfa1F57b198e0",
+	"timeOracle":   "0x7426ce04C8Db8e0E7b3fe0A5179e304485bc4000"
+}

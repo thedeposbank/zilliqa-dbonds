@@ -1,0 +1,27 @@
+doctype html
+html(lang='en')
+  head
+    title zilliqa-dbonds demo
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js')
+    script(src='/js/bootstrap.min.js')
+  body
+    .jumbotron.text-center
+      h1 zilliqa-dbonds demo
+      p following data reflects state of corresponding contracts
+    .container
+      .row
+        .col-sm-4
+          h3 dBonds
+          pre #{dBonds.__json}
+        .col-sm-4
+          h3 swapContract
+          pre #{swapContract.__json}
+        .col-sm-4
+          h3 stableCoin
+          pre #{stableCoin.__json}
+          h3 timeOracle
+          pre #{timeOracle.__json}

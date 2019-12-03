@@ -43,7 +43,7 @@ const accounts = {
 	}
 };
 
-const contractAddresses = require('contract_addrs.json');
+const contractAddresses = require('./contract_addrs.json');
 
 const config = {
 	accounts,
@@ -104,7 +104,8 @@ const config = {
 					tokens: 'Uint128',
 					code: 'Uint32'
 				}
-			}
+			},
+			state: {}
 		},
 		stableCoin: {
 			fileName: './StableCoinSimulator/StablecoinSimulator.scilla',
@@ -147,7 +148,8 @@ const config = {
 					tokens: 'Uint128',
 					code: 'Uint32'
 				}
-			}
+			},
+			state: {}
 		},
 		swapContract: {
 			fileName: './SwapContract/SwapContract.scilla',
@@ -169,7 +171,8 @@ const config = {
 					db_contract: 'ByStr20',
 					dbond: 'Fcdb'
 				}
-			}
+			},
+			state: {}
 		},
 		timeOracle: {
 			fileName: './TimeOracle/TimeOracle.scilla',
@@ -190,33 +193,8 @@ const config = {
 				UpdateTime: {
 					new_timestamp: 'Uint32'
 				}
-			}
-		},
-		test: {
-			fileName: './crowdfunding.scilla',
-			address: '0xB2CbAeF7CC99951B3C48e8248Be6d9225B9Dc871',
-			init: [
-			    { 
-			        "vname" : "_scilla_version",
-			        "type" : "Uint32",
-			        "value" : "0"
-			    },
-			    {
-			        "vname" : "owner",
-			        "type" : "ByStr20", 
-			        "value" : "0x1234567890123456789012345678901234567890"
-			    },
-			    {
-			        "vname" : "max_block",
-			        "type" : "BNum" ,
-			        "value" : "199"
-			    },
-			    { 
-			        "vname" : "goal",
-			        "type" : "Uint128",
-			        "value" : "500"
-			    }
-			]
+			},
+			state: {}
 		}
 	},
 	tests: {
