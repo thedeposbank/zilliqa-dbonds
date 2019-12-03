@@ -43,12 +43,7 @@ const accounts = {
 	}
 };
 
-const contractAddresses = {
-	dBonds:       '0xA5545D91348345ac89D8A7506235a0F4774E9fFc',
-	stableCoin:   '0x7953ef8Eadf418e82d02eF4dc21095606fAeb3E6',
-	swapContract: '0x46B0E4C01a96D71c008C5065C5Ccd5cb7004608f',
-	timeOracle:   '0x005EBA2711937162A5AB5FBf8ec9364FB35aCf91'
-};
+const contractAddresses = require('contract_addrs.json');
 
 const config = {
 	accounts,
