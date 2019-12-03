@@ -5,6 +5,7 @@
 const fs = require('fs');
 const config = require('./config');
 const blockchain = require('./blockchain');
+const debug = require('debug')('demo');
 
 function printUsage() {
 	console.log('\nUsage:\n\tdemo.js deploy {contract name}');
@@ -77,21 +78,21 @@ function addressToName(address) {
 
 async function deploy(contractName) {
 	if(!config.contracts[contractName]) {
-		console.log('unknown contract name "%s"', contractName);
+		debug('unknown contract name "%s"', contractName);
 		process.exit(2);
 	}
-	console.log('deploying "%s"...', contractName);
+	debug('deploying "%s"...', contractName);
 	const contract = config.contracts[contractName];
 	const code = fs.readFileSync(contract.fileName, {encoding: 'utf8'});
-	console.log('code loaded, %d chars, %d lines', code.length, code.trimEnd().split('\n').length);
+	debug('code loaded, %d chars, %d lines', code.length, code.trimEnd().split('\n').length);
 
 	const result = await blockchain.deployContract(code, contract.init);
 
 	if(result) {
-		console.log('success, deployment txid: %s, contract address: %s', result.tx.id, result.address);
+		debug('success, deployment txid: %s, contract address: %s', result.tx.id, result.address);
 	}
 	else {
-		console.log('deployment failed');
+		debug('deployment failed');
 	}
 }
 
@@ -111,7 +112,9 @@ async function runTest(testName) {
 }
 
 async function callTransition(callerName, contractName, transition, args) {
-	console.log('%s => %s.%s()', callerName, contractName, transition);
+
+	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, JSON.stringify(args, null, 2));
+	// pause('press any key');
 	if(!config.accounts[callerName])
 		throw new Error('unknown caller name ' + callerName);
 	if(!config.contracts[contractName])
@@ -131,16 +134,20 @@ async function callTransition(callerName, contractName, transition, args) {
 		argsArray.push(v);
 	}
 	const tx = await blockchain.runTransition(contractName, transition, argsArray, callerName);
-	console.log('done, tx.id:', tx.id);
+	debug('done, tx.id: %s, receipt: %s', tx.id, JSON.stringify(tx.txParams.receipt, null, 2));
 	if(!tx.isConfirmed())
 		throw new Error('tx is not confirmed!');
 }
 
-async function showState(contractName) {
-	console.log('state of contract %s:', contractName);
+async function showState(contractName, comment) {
+	if(comment)
+		debug(comment + ', state of contract %s:', contractName);
+	else
+		debug('state of contract %s:', contractName);
 	const state = await blockchain.getState(config.contracts[contractName].address);
 	const stateString = JSON.stringify(state, null, 2).replace(/"(0x[0-9a-f]{40})"/gi, (match, addr) => ('address:'+addressToName(addr)));
 	console.log(stateString);
+	console.log();
 	return state;
 }
 
@@ -169,8 +176,9 @@ async function pause(msg, delay) {
 
 async function runScenario() {
 	let state;
+
 	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'user', tokens: '100000000', code: '0'});
-	await pause('signing agreement (press a key when done)');
+	// await pause('signing agreement (press a key when done)');
 	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
 		"constructor" : "FcdbCon",
 		"argtypes"    : [],
@@ -196,7 +204,11 @@ async function runScenario() {
 		]
 	}});
 	await showState('dBonds');
-	await pause('press a key to continue');
+
+	const fiatMaturityTimestamp = (new Date(2021, 4, 12, 8)).getTime()/1000; // 4 -- month index from 0 (May)
+	const maturityTimestamp     = (new Date(2021, 4,  5, 8)).getTime()/1000;
+	const retireTimestamp       = (new Date(2021, 4, 25, 8)).getTime()/1000;
+
 	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
 		"constructor" : "FcdbCon",
 		"argtypes"    : [],
@@ -205,20 +217,20 @@ async function runScenario() {
 				"constructor" : "FiatBondCon",
 				"argtypes" : [],
 				"arguments" : [
-					"1602324610",
+					fiatMaturityTimestamp.toString(),
 					"US25152R5F60"
 				]
 			},
-			"10",
-			"1602000000",
-			"1602324610",
+			"5",
+			maturityTimestamp.toString(),
+			retireTimestamp.toString(),
 			config.contracts.stableCoin.address,
-			"10000",
+			"95000",
 			config.accounts.dBondVerifier.address,
 			config.accounts.counterParty.address,
 			config.accounts.liquidationAgent.address,
 			"300",
-			"https://goo-gl.su/m99d1"
+			"https://bit.ly/2VrMIPi"
 		]
 	}});
 	await showState('dBonds');
@@ -234,58 +246,70 @@ async function runScenario() {
 				{
 					"argtypes": [],
 					"arguments": [
-						"1602324610",
+						fiatMaturityTimestamp.toString(),
 						"US25152R5F60"
 					],
 					"constructor": "FiatBondCon"
 				},
-				"10",
-				"1602000000",
-				"1602324610",
+				"5",
+				maturityTimestamp.toString(),
+				retireTimestamp.toString(),
 				config.contracts.stableCoin.address,
-				"10000",
+				"95000",
 				config.accounts.dBondVerifier.address,
 				config.accounts.counterParty.address,
 				config.accounts.liquidationAgent.address,
 				"300",
-				"https://goo-gl.su/m99d1"
+				"https://bit.ly/2VrMIPi"
 			],
 			"constructor": "FcdbCon"
 		}
 	});
 	await showState('swapContract');
-	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: "1602300001" });
+	const now = Math.floor(Date.now()/1000);
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: now.toString() });
 	await showState('timeOracle');
 	await callTransition('user', 'dBonds', 'RequestTime', {});
 	await showState('dBonds');
 	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
 	await showState('dBonds');
-	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: "9", code: "0"});
+
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: '4', code: '0'});
 	state = await showState('dBonds');
 	const cur_price = state.cur_price;
 	// const cur_price = 10000;
-	await callTransition('user', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: (cur_price * 9).toString(), code: '0'});
+	await callTransition('user', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: Math.round(cur_price * 4).toString(), code: '0'});
 	await showState('stableCoin');
-	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '1', code: '3'});
-	await showState('dBonds');
 
-	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: "1602301000"});
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (maturityTimestamp - 36000).toString() });
 	await showState('timeOracle');
 	await callTransition('user', 'dBonds', 'RequestTime', {});
 	await showState('dBonds');
 	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
 	await showState('dBonds');
 
-	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '100000000', code: '0'});
-
-	state = await showState('dBonds');
-	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: (parseInt(state.dbond.arguments[5]) * 9).toString(), code: '1'});
+	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
 	await showState('stableCoin');
 
-	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '9', code: '4'});
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '1', code: '3'});
+	state = await showState('dBonds');
+	await showState('swapContract');
+	await showState('stableCoin');
+	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(parseInt(state.dbond.arguments[5]) * 4).toString(), code: '1'});
 	await showState('dBonds');
+	await showState('swapContract');
 
-	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: '1602324000'});
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '2', code: '4'});
+	await showState('dBonds');
+	await showState('stableCoin');
+	await showState('swapContract');
+
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '2', code: '4'});
+	await showState('dBonds');
+	await showState('stableCoin');
+	await showState('swapContract');
+
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (retireTimestamp - 36000).toString() });
 	await showState('timeOracle');
 
 	await callTransition('user', 'dBonds', 'RequestTime', {});

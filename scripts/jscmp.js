@@ -51,6 +51,12 @@ function indexName(p) {
 }
 
 function cmp(j1, j2, prefix) {
+	if( typeof j1 == 'string' &&
+		typeof j2 == 'string' &&
+		j1.slice(0, 2) == '0x' &&
+		j2.slice(0, 2) == '0x' &&
+		j1.toLowerCase() == j2.toLowerCase())
+			return true;
 	if(typeof j1 == 'string' || typeof j1 == 'number' || typeof j1 == 'boolean') {
 		if(j1 !== j2) {
 			printDiff(j1, j2, prefix);

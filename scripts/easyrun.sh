@@ -20,10 +20,16 @@ function run_test() {
 		print_usage_and_exit
 	fi
 
+	if [[ -f $test_dir/init.json ]] ; then
+		init=$test_dir/init.json
+	else
+		init=$test_dir/../init.json
+	fi
+
 	title "running test in $test_dir" 
 
 	messages=`scilla-runner \
-		-init $test_dir/../init.json \
+		-init $init \
 		-istate $test_dir/state.json \
 		-imessage $test_dir/message.json \
 		-iblockchain $test_dir/blockchain.json \
@@ -51,7 +57,7 @@ function run_test() {
 				exit $status
 			fi
 		else
-			print_error "scilla-runner failed"
+			print_error "scilla-runner failed: $messages"
 			exit $status
 		fi
 	fi

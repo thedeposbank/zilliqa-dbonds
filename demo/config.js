@@ -44,10 +44,10 @@ const accounts = {
 };
 
 const contractAddresses = {
-	dBonds:       '0xfec0773D38EE36199f3aC43F29262e1F90e6C9af',
-	stableCoin:   '0x04f9b4fb26D0863D5cfB3e2e29BE1e7523E18456',
-	swapContract: '0xa57f40CC8Ce00909D39dd0390a41C1BE5928661C',
-	timeOracle:   '0x290024B1adD6DdFB646B983C1Aab38B0b7b0792d'
+	dBonds:       '0x2E3A27bBE322fA46e5B9Fe206d2719427ae58F5C',
+	stableCoin:   '0x4947d6Ae666299Ef3a4F1807d9548aa9c4150A3e',
+	swapContract: '0x8d2D645ead21519df3c741deEfffE14Fb6B34FfD',
+	timeOracle:   '0x3464dA68A6b2c74cf05c3a51f77dF2286c7B669d'
 };
 
 const config = {
@@ -128,7 +128,7 @@ const config = {
 				{
 					vname: "total_tokens",
 					type: "Uint128", 
-					value: "1000000000"
+					value: "100000000000"
 				},
 				{
 					vname: "decimals",
