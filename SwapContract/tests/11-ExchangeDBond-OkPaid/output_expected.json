@@ -76,7 +76,7 @@
   ],
   "events": [
     {
-      "_eventname": "AcceptDBondDepSuccess",
+      "_eventname": "ExchangeDBondSuccess",
       "params": [
         {
           "vname": "db_contract",
