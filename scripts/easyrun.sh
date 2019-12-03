@@ -22,14 +22,14 @@ function run_test() {
 
 	title "running test in $test_dir" 
 
-	scilla-runner \
+	messages=`scilla-runner \
 		-init $test_dir/../init.json \
 		-istate $test_dir/state.json \
 		-imessage $test_dir/message.json \
 		-iblockchain $test_dir/blockchain.json \
 		-i $test_dir/../../$dir.scilla \
 		-o $test_dir/output.json \
-		-gaslimit 8000
+		-gaslimit 8000 2>&1`
 
 	status=$?
 
@@ -43,8 +43,17 @@ function run_test() {
 			exit 1
 		fi
 	else
-		print_error "scilla-runner failed"
-		exit $status
+		if echo "$messages" | grep -q 'Exception thrown' ; then
+			if echo "$messages" | grep -q `cat $test_dir/exception_expected.txt` ; then
+				true
+			else
+				print_error "got wrong exception: $messages"
+				exit $status
+			fi
+		else
+			print_error "scilla-runner failed"
+			exit $status
+		fi
 	fi
 }
 

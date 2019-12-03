@@ -26,7 +26,7 @@ end
 
 transition SendTimestamp ()
   time <- cur_timestamp;
-  msg = { _tag : "UpdateTime"; _recipient : _sender; _amount : Uint128 0; new_timestamp : time};
+  msg = { _tag : "OnGetTime"; _recipient : _sender; _amount : Uint128 0; new_timestamp : time};
   msgs = one_msg msg;
   send msgs
 end

@@ -8,8 +8,8 @@ scilla_version 0
 
 library SwapContract
 
-let one_msg = 
-  fun (msg : Message) => 
+let one_msg =
+  fun (msg : Message) =>
   let nil_msg = Nil {Message} in
   Cons {Message} msg nil_msg
 
@@ -45,10 +45,10 @@ let zero : Uint128 = Uint128 0
 let z = Uint32 0
 let zx = builtin ripemd160hash z
 
-type FiatBond = 
-    | FiatBondCon of Uint32 (*maturity timestamp*) 
+type FiatBond =
+    | FiatBondCon of Uint32 (*maturity timestamp*)
                      String (*ISIN*)
-type Fcdb = 
+type Fcdb =
   | FcdbCon of FiatBond (*the fiat bond lying as collateral*)
             Uint128 (*total supply*)
             Uint32 (*maturity timestamp*)
@@ -80,7 +80,7 @@ transition AddDBond (db_contract : ByStr20, dbond : Fcdb)
     | True =>
         ex <- exists dbonds[db_contract];
         match ex with
-        | True => 
+        | True =>
             e = {_eventname : "AddDBondFailureAlreadyExists"; caller : _sender; db_contract : db_contract};
             event e
         | False =>
@@ -105,7 +105,7 @@ procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
     end;
     match db with
     | Some db =>
-        match db with 
+        match db with
         | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
             ten = Uint128 10;    
             dec <- decimals;
@@ -266,7 +266,7 @@ procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint12
                     max_cost = builtin mul denom pr_am;
                     total = min total_p max_cost;
                     nom = builtin mul total amount;
-                    need_to_send = builtin div nom denom; 
+                    need_to_send = builtin div nom denom;
                     msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
                         to : sender; tokens : need_to_send; code : Uint32 0};
                     msgs = one_msg msg;
@@ -296,7 +296,7 @@ transition TransferSuccess (sender : ByStr20, amount : Uint128, code : Uint32)
     | False =>
         match liquidation with
         | True =>
-            AcceptLiquidation _sender  sender  amount 
+            AcceptLiquidation _sender  sender  amount
         | False =>
             match db_dep with
             | True =>
