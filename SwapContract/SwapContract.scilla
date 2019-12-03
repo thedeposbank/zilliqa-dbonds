@@ -262,7 +262,7 @@ procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint12
                 | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
                     accept;
                     total_p = builtin add l_am p_am;
-                    denom = builtin sub suppl d_am;
+                    denom = suppl;
                     max_cost = builtin mul denom pr_am;
                     total = min total_p max_cost;
                     nom = builtin mul total amount;
