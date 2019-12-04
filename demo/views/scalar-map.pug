@@ -1,0 +1,10 @@
+mixin scalarMap(map, name)
+  h4= name
+  table.table.table-bordered.table-sm
+    each value, key in map
+      tr
+        td= key
+        td= value
+    else
+      tr
+        th empty

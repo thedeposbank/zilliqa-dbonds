@@ -178,8 +178,15 @@ function statesForWeb() {
 	const result = {};
 	for(let contractName in config.contracts) {
 		const stringified = stringify(config.contracts[contractName].state, makeHumanReadable, 2);
-		result[contractName] = JSON.parse(stringified);
+		const humanReadable = JSON.parse(stringified);
+		result[contractName] = humanReadable;
+		const scalar = {};
+		for(let key in humanReadable) {
+			if(typeof humanReadable[key] == 'string')
+				scalar[key] = humanReadable[key];
+		}
 		result[contractName].__json = stringified;
+		result[contractName].__scalar = scalar;
 	}
 	return result;
 }

@@ -1,0 +1,47 @@
+include date
+mixin dbond(db)
+  h4 dBond specifications
+  table.table.table-bordered.table-sm
+    tr
+      th(colspan="2") Collateral bond fields
+    tr
+      td maturity time
+      td
+        +date(db.arguments[0].arguments[0])
+    tr
+      td ISIN
+      td= db.arguments[0].arguments[1]
+    tr
+      th(colspan="2") dBond fields
+    tr
+      td total supply
+      td= db.arguments[1]
+    tr
+      td maturity time
+      td
+        +date(db.arguments[2])
+    tr
+      td retire time
+      td
+        +date(db.arguments[3])
+    tr
+      td issuer of unit of account
+      td= db.arguments[4]
+    tr
+      td pay off price
+      td= db.arguments[5]
+    tr
+      td verification account
+      td= db.arguments[6]
+    tr
+      td counterparty account
+      td= db.arguments[7]
+    tr
+      td liquidation agent
+      td= db.arguments[8]
+    tr
+      td annual percentage rate, 100 goes for 1%
+      td= db.arguments[9]
+    tr
+      td escrow contract link
+      td= db.arguments[10]
