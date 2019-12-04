@@ -121,8 +121,8 @@ async function runTest(testName) {
 
 async function callTransition(callerName, contractName, transition, args) {
 
-	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, stringify(args, null, 2));
-	// await pause('press any key');
+	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, stringify(args, makeHumanReadable, 2));
+	await pause('press any key to proceed...');
 	if(!config.accounts[callerName])
 		throw new Error('unknown caller name ' + callerName);
 	if(!config.contracts[contractName])
@@ -157,17 +157,27 @@ async function updateGlobalState(print) {
 	}
 }
 
+function makeHumanReadable(key, value) {
+	if(key == 'cur_state' && value >= 0 && value <= 6)
+		return config.dbondStates[value];
+	if(key == 'code' && value >= 0 && value <= 4)
+		return config.transferCodes[value];
+	return value;
+}
+
 async function showState() {
+	debug('requesting contracts state...');
 	updateGlobalState((contractName, state) => {
-		debug('state of contract %s:', contractName);
-		debug(stringify(state, null, 2) + '\n');
+		// debug('state of contract %s:', contractName);
+		// debug(stringify(state, makeHumanReadable, 2) + '\n');
 	});
+	debug('contracts state updated');
 }
 
 function statesForWeb() {
 	const result = {};
 	for(let contractName in config.contracts) {
-		const stringified = stringify(config.contracts[contractName].state, null, 2);
+		const stringified = stringify(config.contracts[contractName].state, makeHumanReadable, 2);
 		result[contractName] = JSON.parse(stringified);
 		result[contractName].__json = stringified;
 	}
@@ -208,138 +218,140 @@ async function pause(msg, delay) {
 }
 
 async function runScenario() {
-	// await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'user', tokens: '100000000', code: '0'});
-	// // await pause('signing agreement (press a key when done)');
-	// await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
-	// 	"constructor" : "FcdbCon",
-	// 	"argtypes"    : [],
-	// 	"arguments"   : [
-	// 		{
-	// 			"constructor" : "FiatBondCon",
-	// 			"argtypes" : [],
-	// 			"arguments" : [
-	// 				"1602324610",
-	// 				"US25152R5F60"
-	// 			]
-	// 		},
-	// 		"10",
-	// 		"1602000000",
-	// 		"1602324610",
-	// 		config.contracts.stableCoin.address,
-	// 		"10000",
-	// 		config.accounts.dBondVerifier.address,
-	// 		config.accounts.counterParty.address,
-	// 		config.accounts.liquidationAgent.address,
-	// 		"300",
-	// 		"http://sdfsdf.com/sdfsdf"
-	// 	]
-	// }});
-	// await showState();
-
-	// const fiatMaturityTimestamp = (new Date(2021, 4, 12, 8)).getTime()/1000; // 4 -- month index from 0 (May)
-	// const maturityTimestamp     = (new Date(2021, 4,  5, 8)).getTime()/1000;
-	// const retireTimestamp       = (new Date(2021, 4, 25, 8)).getTime()/1000;
-
-	// await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
-	// 	"constructor" : "FcdbCon",
-	// 	"argtypes"    : [],
-	// 	"arguments"   : [
-	// 		{
-	// 			"constructor" : "FiatBondCon",
-	// 			"argtypes" : [],
-	// 			"arguments" : [
-	// 				fiatMaturityTimestamp.toString(),
-	// 				"US25152R5F60"
-	// 			]
-	// 		},
-	// 		"50000",
-	// 		maturityTimestamp.toString(),
-	// 		retireTimestamp.toString(),
-	// 		config.contracts.stableCoin.address,
-	// 		"95000",
-	// 		config.accounts.dBondVerifier.address,
-	// 		config.accounts.counterParty.address,
-	// 		config.accounts.liquidationAgent.address,
-	// 		"300",
-	// 		"https://bit.ly/2VrMIPi"
-	// 	]
-	// }});
-	// await showState();
-	// await callTransition('dBondsOwner', 'dBonds', 'FreezeTillVer', {});
-	// await showState();
-	// await callTransition('dBondVerifier', 'dBonds', 'VerifyDBond', {});
-	// await showState();
-	// await callTransition('swapContractOwner', 'swapContract', 'AddDBond', {
-	// 	db_contract: config.contracts.dBonds.address,
-	// 	dbond: {
-	// 		"argtypes": [],
-	// 		"arguments": [
-	// 			{
-	// 				"argtypes": [],
-	// 				"arguments": [
-	// 					fiatMaturityTimestamp.toString(),
-	// 					"US25152R5F60"
-	// 				],
-	// 				"constructor": "FiatBondCon"
-	// 			},
-	// 			"50000",
-	// 			maturityTimestamp.toString(),
-	// 			retireTimestamp.toString(),
-	// 			config.contracts.stableCoin.address,
-	// 			"95000",
-	// 			config.accounts.dBondVerifier.address,
-	// 			config.accounts.counterParty.address,
-	// 			config.accounts.liquidationAgent.address,
-	// 			"300",
-	// 			"https://bit.ly/2VrMIPi"
-	// 		],
-	// 		"constructor": "FcdbCon"
-	// 	}
-	// });
-	// await showState();
-	// const now = Math.floor(Date.now()/1000);
-	// await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: now.toString() });
-	// await showState();
-	// await callTransition('user', 'dBonds', 'RequestTime', {});
-	// await showState();
-	// await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
-	// await showState();
-
-	// await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: '40000', code: '0'});
-	// await showState();
-	// const cur_price = config.contracts.dBonds.state.cur_price;
-
-	// await callTransition('user', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: Math.round(cur_price * 4).toString(), code: '0'});
-	// await showState();
-
-	// await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (maturityTimestamp - 36000).toString() });
-	// await showState();
-	// await callTransition('user', 'dBonds', 'RequestTime', {});
-	// await showState();
-	// await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
-	// await showState();
-
-	// await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
-	// await showState();
-
-	// await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
-	// showState();
-	// const payoffPrice = parseInt(config.contracts.dBonds.state.dbond.arguments[5]);
-
-	// await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
-	// await showState();
-
-	// await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
-	// await showState();
-
-	// await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
-	// await showState();
-
-	// await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (retireTimestamp - 36000).toString() });
-	// await showState();
-
-	// await callTransition('user', 'dBonds', 'RequestTime', {});
 	await showState();
 
-	// process.exit(0);
+	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'user', tokens: '100000000', code: '0'});
+	// await pause('signing agreement (press a key when done)');
+	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
+		"constructor" : "FcdbCon",
+		"argtypes"    : [],
+		"arguments"   : [
+			{
+				"constructor" : "FiatBondCon",
+				"argtypes" : [],
+				"arguments" : [
+					"1602324610",
+					"US25152R5F60"
+				]
+			},
+			"10",
+			"1602000000",
+			"1602324610",
+			config.contracts.stableCoin.address,
+			"10000",
+			config.accounts.dBondVerifier.address,
+			config.accounts.counterParty.address,
+			config.accounts.liquidationAgent.address,
+			"300",
+			"http://sdfsdf.com/sdfsdf"
+		]
+	}});
+	await showState();
+
+	const fiatMaturityTimestamp = (new Date(2021, 4, 12, 8)).getTime()/1000; // 4 -- month index from 0 (May)
+	const maturityTimestamp     = (new Date(2021, 4,  5, 8)).getTime()/1000;
+	const retireTimestamp       = (new Date(2021, 4, 25, 8)).getTime()/1000;
+
+	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
+		"constructor" : "FcdbCon",
+		"argtypes"    : [],
+		"arguments"   : [
+			{
+				"constructor" : "FiatBondCon",
+				"argtypes" : [],
+				"arguments" : [
+					fiatMaturityTimestamp.toString(),
+					"US25152R5F60"
+				]
+			},
+			"50000",
+			maturityTimestamp.toString(),
+			retireTimestamp.toString(),
+			config.contracts.stableCoin.address,
+			"95000",
+			config.accounts.dBondVerifier.address,
+			config.accounts.counterParty.address,
+			config.accounts.liquidationAgent.address,
+			"300",
+			"https://bit.ly/2VrMIPi"
+		]
+	}});
+	await showState();
+	await callTransition('dBondsOwner', 'dBonds', 'FreezeTillVer', {});
+	await showState();
+	await callTransition('dBondVerifier', 'dBonds', 'VerifyDBond', {});
+	await showState();
+	await callTransition('swapContractOwner', 'swapContract', 'AddDBond', {
+		db_contract: config.contracts.dBonds.address,
+		dbond: {
+			"argtypes": [],
+			"arguments": [
+				{
+					"argtypes": [],
+					"arguments": [
+						fiatMaturityTimestamp.toString(),
+						"US25152R5F60"
+					],
+					"constructor": "FiatBondCon"
+				},
+				"50000",
+				maturityTimestamp.toString(),
+				retireTimestamp.toString(),
+				config.contracts.stableCoin.address,
+				"95000",
+				config.accounts.dBondVerifier.address,
+				config.accounts.counterParty.address,
+				config.accounts.liquidationAgent.address,
+				"300",
+				"https://bit.ly/2VrMIPi"
+			],
+			"constructor": "FcdbCon"
+		}
+	});
+	await showState();
+	const now = Math.floor(Date.now()/1000);
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: now.toString() });
+	await showState();
+	await callTransition('user', 'dBonds', 'RequestTime', {});
+	await showState();
+	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
+	await showState();
+
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'user', tokens: '40000', code: '0'});
+	await showState();
+	const cur_price = config.contracts.dBonds.state.cur_price;
+
+	await callTransition('user', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: Math.round(cur_price * 4).toString(), code: '0'});
+	await showState();
+
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (maturityTimestamp - 36000).toString() });
+	await showState();
+	await callTransition('user', 'dBonds', 'RequestTime', {});
+	await showState();
+	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
+	await showState();
+
+	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
+	await showState();
+
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
+	showState();
+	const payoffPrice = parseInt(config.contracts.dBonds.state.dbond.arguments[5]);
+
+	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
+	await showState();
+
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
+	await showState();
+
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
+	await showState();
+
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (retireTimestamp - 36000).toString() });
+	await showState();
+
+	await callTransition('user', 'dBonds', 'RequestTime', {});
+	await showState();
+
+	process.exit(0);
 }

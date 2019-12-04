@@ -50,6 +50,22 @@ const config = {
 	deployer: accounts.dBondsOwner,
 	apiUrl: 'https://dev-api.zilliqa.com/',
 	chainId: 333,
+	dbondStates: [
+		'not issued',
+		'frozen till verification',
+		'issued',
+		'expired, paid off',
+		'expired, tech. defaulted',
+		'expired, liquidated',
+		'expired, defaulted'
+	],
+	transferCodes: [
+		'simple transfer',
+		'pay off',
+		'liquidation',
+		'dbond deposit',
+		'dbond exchange'
+	],
 	contracts: {
 		dBonds: {
 			fileName: './dBonds/dBonds.scilla',
