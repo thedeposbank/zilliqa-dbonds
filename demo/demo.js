@@ -133,7 +133,7 @@ async function runTest(testName) {
 async function callTransition(callerName, contractName, transition, args) {
 
 	debug('calling: %s => %s.%s(%s)', callerName, contractName, transition, stringify(args, makeHumanReadable, 2));
-	// await pause('press any key to proceed...');
+	await pause('press any key to proceed...');
 	if(!config.accounts[callerName])
 		throw new Error('unknown caller name ' + callerName);
 	if(!config.contracts[contractName])
@@ -284,9 +284,10 @@ async function runScenario() {
 	}});
 	await showState();
 
-	const fiatMaturityTimestamp = (new Date(2021, 4, 12, 8)).getTime()/1000; // 4 -- month index from 0 (May)
-	const maturityTimestamp     = (new Date(2021, 4,  5, 8)).getTime()/1000;
-	const retireTimestamp       = (new Date(2021, 4, 25, 8)).getTime()/1000;
+	const fiatMaturityTimestamp = (new Date(2021, 4, 12, 0)).getTime()/1000; // 4 -- month index from 0 (May)
+	const maturityTimestamp     = (new Date(2021, 4,  5, 0)).getTime()/1000;
+	const retireTimestamp       = (new Date(2021, 4, 25, 0)).getTime()/1000;
+	const now                   = (new Date(2019, 11, 1, 12)).getTime()/1000;
 
 	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
 		"constructor" : "FcdbCon",
@@ -345,7 +346,7 @@ async function runScenario() {
 		}
 	});
 	await showState();
-	const now = Math.floor(Date.now()/1000);
+
 	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: now.toString() });
 	await showState();
 	await callTransition('user', 'dBonds', 'RequestTime', {});
@@ -360,34 +361,34 @@ async function runScenario() {
 	await callTransition('user', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: Math.round(cur_price * 4).toString(), code: '0'});
 	await showState();
 
-	// await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (maturityTimestamp - 36000).toString() });
-	// await showState();
-	// await callTransition('user', 'dBonds', 'RequestTime', {});
-	// await showState();
-	// await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
-	// await showState();
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (maturityTimestamp - 36000).toString() });
+	await showState();
+	await callTransition('user', 'dBonds', 'RequestTime', {});
+	await showState();
+	await callTransition('user', 'dBonds', 'GetUpdCurPrice', {});
+	await showState();
 
-	// await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
-	// await showState();
+	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'dBondsOwner', tokens: '1000000', code: '0'});
+	await showState();
 
-	// await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
-	// await showState();
-	// const payoffPrice = parseInt(config.contracts.dBonds.state.dbond.arguments[5]);
+	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
+	await showState();
+	const payoffPrice = parseInt(config.contracts.dBonds.state.dbond.arguments[5]);
 
-	// await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
-	// await showState();
+	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
+	await showState();
 
-	// await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
-	// await showState();
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
+	await showState();
 
-	// await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
-	// await showState();
+	await callTransition('user', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '20000', code: '4'});
+	await showState();
 
-	// await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (retireTimestamp - 36000).toString() });
-	// await showState();
+	await callTransition('timeOracleOwner', 'timeOracle', 'UpdateTime', { new_timestamp: (retireTimestamp - 36000).toString() });
+	await showState();
 
-	// await callTransition('user', 'dBonds', 'RequestTime', {});
-	// await showState();
+	await callTransition('user', 'dBonds', 'RequestTime', {});
+	await showState();
 
 	await pause('press any key to quit')
 	process.exit(0);

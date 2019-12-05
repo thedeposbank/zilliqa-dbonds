@@ -252,7 +252,4 @@ const config = {
 	}
 };
 
-// const privateConfig = require('./config-private.js');
-// Object.assign(config, privateConfig);
-
 module.exports = config;
