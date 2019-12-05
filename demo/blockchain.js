@@ -2,7 +2,7 @@
 
 const { BN, Long, bytes, units } = require("@zilliqa-js/util");
 const { Zilliqa } = require("@zilliqa-js/zilliqa");
-const { toBech32Address, getAddressFromPrivateKey, getPubKeyFromPrivateKey} = require("@zilliqa-js/crypto");
+const { toBech32Address, getAddressFromPrivateKey, getPubKeyFromPrivateKey } = require("@zilliqa-js/crypto");
 
 const config = require('./config');
 
@@ -82,8 +82,16 @@ async function runTransition(address, transition, args, caller) {
 	return await contract.call(transition, args, txParams, 33, 1000, true);
 }
 
+function createAccount(testnet = true) {
+	const address = zilliqa.wallet.create();
+	const privateKey = zilliqa.wallet.accounts[address].privateKey;
+	const bech32Address = toBech32Address(address, testnet);
+	return { address, privateKey, bech32Address };
+}
+
 module.exports = {
 	deployContract,
 	getState,
-	runTransition
+	runTransition,
+	createAccount
 };

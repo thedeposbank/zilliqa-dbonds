@@ -3,6 +3,7 @@
 'use strict';
 
 const fs = require('fs');
+const util = require('util');
 const config = require('./config');
 const blockchain = require('./blockchain');
 const Debug = require('debug');
@@ -30,6 +31,7 @@ switch(process.argv[2]) {
 		deploy(process.argv[3]);
 		break;
 	case 'serve':
+		showState();
 		runServer();
 		break;
 	case 'run':
@@ -44,6 +46,9 @@ switch(process.argv[2]) {
 	case 'scenario2':
 		runServer();
 		runScenario2();
+		break;
+	case 'genacc':
+		generateAccounts();
 		break;
 	case 'show':
 		if(process.argv.lengh < 4)
@@ -234,11 +239,24 @@ async function pause(msg, delay) {
 	});
 }
 
+function generateAccounts() {
+	const result = [];
+	for(let accName in config.accounts) {
+		const account = blockchain.createAccount();
+		result.push({ name: accName, account });
+	}
+	console.log(
+		'{\n' + 
+		result.map(acc => util.format("\t%s: {\n\t\taddress: '%s',\n\t\tprivateKey: '%s',\n\t\tbech32Address: '%s'\n\t}",
+			acc.name, acc.account.address, acc.account.privateKey, acc.account.bech32Address)).join(',\n') +
+		'\n}\n');
+}
+
 async function runScenario() {
 	await showState();
 
 	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'user', tokens: '100000000', code: '0'});
-	showState();
+	await showState();
 	await pause('signing agreement (press a key when done)');
 	await callTransition('dBondsOwner', 'dBonds', 'CreateUpdateDBond', { init_dbond: {
 		"constructor" : "FcdbCon",
@@ -353,7 +371,7 @@ async function runScenario() {
 	await showState();
 
 	await callTransition('dBondsOwner', 'dBonds', 'Transfer', {to: 'swapContract', tokens: '10000', code: '3'});
-	showState();
+	await showState();
 	const payoffPrice = parseInt(config.contracts.dBonds.state.dbond.arguments[5]);
 
 	await callTransition('dBondsOwner', 'stableCoin', 'Transfer', {to: 'dBonds', tokens: Math.round(payoffPrice * 4).toString(), code: '1'});
@@ -379,7 +397,7 @@ async function runScenario2() {
 	await showState();
 
 	await callTransition('stableCoinOwner', 'stableCoin', 'Transfer', {to: 'user', tokens: '100000000', code: '0'});
-	showState();
+	await showState();
 	// await pause('signing agreement (press a key when done)');
 
 	const fiatMaturityTimestamp = (new Date(2021, 4, 12, 8)).getTime()/1000; // 4 -- month index from 0 (May)
