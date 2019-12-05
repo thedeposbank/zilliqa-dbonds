@@ -2,4 +2,4 @@ mixin date(ts)
   -
     var d = new Date(parseInt(ts)*1000);
     function zeroPad(n) { return n.toString().padStart(2, '0'); }
-  = d.getFullYear()+'-'+zeroPad(d.getMonth()+1)+'-'+zeroPad(d.getDate())
+  = d.getFullYear()+'-'+zeroPad(d.getMonth()+1)+'-'+zeroPad(d.getDate())+' '+zeroPad(d.getHours())+':'+zeroPad(d.getMinutes())
