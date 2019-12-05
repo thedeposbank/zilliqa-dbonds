@@ -68,7 +68,7 @@ const config = {
 	],
 	contracts: {
 		dBonds: {
-			fileName: './dBonds/dBonds.scilla',
+			fileName: '../dBonds/dBonds.scilla',
 			address: contractAddresses.dBonds,
 			init: [
 				{ 
@@ -119,12 +119,13 @@ const config = {
 					to: 'ByStr20',
 					tokens: 'Uint128',
 					code: 'Uint32'
-				}
+				},
+				ClaimDefault: {}
 			},
 			state: {}
 		},
 		stableCoin: {
-			fileName: './StableCoinSimulator/StablecoinSimulator.scilla',
+			fileName: '../StableCoinSimulator/StablecoinSimulator.scilla',
 			address: contractAddresses.stableCoin,
 			init: [
 				{ 
@@ -168,7 +169,7 @@ const config = {
 			state: {}
 		},
 		swapContract: {
-			fileName: './SwapContract/SwapContract.scilla',
+			fileName: '../SwapContract/SwapContract.scilla',
 			address: contractAddresses.swapContract,
 			init: [
 				{ 
@@ -191,7 +192,7 @@ const config = {
 			state: {}
 		},
 		timeOracle: {
-			fileName: './TimeOracle/TimeOracle.scilla',
+			fileName: '../TimeOracle/TimeOracle.scilla',
 			address: contractAddresses.timeOracle,
 			init: [
 				{ 
