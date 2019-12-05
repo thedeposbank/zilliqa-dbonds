@@ -261,18 +261,33 @@ procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint12
                 match db with
                 | FcdbCon fiat_bond suppl mat_t ret_t pr_iss pr_am ver countrp liqag apr escrlink =>
                     accept;
-                    total_p = builtin add l_am p_am;
-                    denom = suppl;
-                    max_cost = builtin mul denom pr_am;
+                    total_pp = builtin add l_am p_am; (*price*)
+                    ten = Uint128 10;
+                    d <- decimals;
+                    p = builtin pow ten d;
+                    total_p = builtin mul p total_pp; (*both*)
+                    denom = builtin sub suppl d_am; (*dbond*)
+                    max_cost = builtin mul denom pr_am;(*both*)
                     total = min total_p max_cost;
-                    nom = builtin mul total amount;
+                    total = builtin div total p; (*price*)
+                    nom = builtin mul total amount; (*both*)
+                    
                     need_to_send = builtin div nom denom;
+                    new_d_dep = builtin add d_am amount;
+                    received_d[db_contract] := new_d_dep;
+                    new_p = builtin sub total_pp need_to_send;
+                    l_case = builtin lt zero l_am;
+                    match l_case with
+                    | True =>
+                        received_l[db_contract] := new_p
+                    | False =>
+                        received_p[db_contract] := new_p
+                    end;
                     msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero;
                         to : sender; tokens : need_to_send; code : Uint32 0};
                     msgs = one_msg msg;
-                    new_d_dep = builtin add d_am amount;
-                    received_d[db_contract] := new_d_dep;
                     send msgs;
+                    
                     e = {_eventname : "ExchangeDBondSuccess"; db_contract : db_contract; sender : sender};
                     event e
                 end
