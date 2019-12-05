@@ -22,7 +22,9 @@ async function getGasPrice() {
 	// console.log(`My Gas Price ${myGasPrice.toString()}`);
 	const isGasSufficient = myGasPrice.gte(new BN(minGasPrice.result)); // Checks if your gas price is less than the minimum gas price
 	// console.log(`Is the gas price sufficient? ${isGasSufficient}`);
-	return myGasPrice;
+	if(isGasSufficient)
+		return myGasPrice;
+	return new BN(minGasPrice.result);
 }
 
 async function deployContract(code, init) {
@@ -32,11 +34,17 @@ async function deployContract(code, init) {
 	const txParams = {
 		version: VERSION,
 		gasPrice: myGasPrice,
-		gasLimit: Long.fromNumber(42000)
+		gasLimit: Long.fromNumber(32000)
 	};
 
-	const [deployTx, hello] = await contract.deploy(txParams, 33, 1000, true);
-	console.log('deployment tx receipt: %o', deployTx.txParams.receipt);
+	let deployTx, hello;
+	try {
+		[deployTx, hello] = await contract.deploy(txParams, 33, 1000, true);
+		console.log('deployment tx receipt: %o', deployTx.txParams.receipt);
+	} catch(e) {
+		console.error(e);
+		process.exit(1);
+	}
 
 	if(contract.isDeployed()) {
 		return { tx: deployTx, address: hello.address };

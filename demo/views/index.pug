@@ -1,3 +1,15 @@
+include scalar-list
+include scalar-map
+include dbond
+
+mixin contract(title)
+  h2= title
+  div.p-2.bg-light.text-dark
+    if block
+      block
+    else
+      p empty
+
 doctype html
 html(lang='en')
   head
@@ -9,19 +21,41 @@ html(lang='en')
     script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js')
     script(src='/js/bootstrap.min.js')
   body
-    .jumbotron.text-center
+    .text-center
       h1 zilliqa-dbonds demo
       p following data reflects state of corresponding contracts
     .container
       .row
-        .col-sm-4
-          h3 dBonds
-          pre #{dBonds.__json}
-        .col-sm-4
-          h3 swapContract
-          pre #{swapContract.__json}
-        .col-sm-4
-          h3 stableCoin
-          pre #{stableCoin.__json}
-          h3 timeOracle
-          pre #{timeOracle.__json}
+        .col-xl-4
+          +contract('dBonds')
+            +scalarList(dBonds.__scalar)
+            +scalarMap(dBonds.allowed, 'allowed')
+            +scalarMap(dBonds.balances, 'balances')
+        .col-xl-4
+          +contract('swapContract')
+            +scalarList(swapContract.__scalar)
+            h4 dbonds
+            table.table.table-bordered.table-sm
+              each value, key in swapContract.dbonds
+                tr
+                  td= key
+                  td= value.arguments[0].arguments[1]
+              else
+                tr
+                  th empty
+            +scalarMap(swapContract.exchangable, 'exchangable')
+            +scalarMap(swapContract.received_d, 'received_d')
+            +scalarMap(swapContract.received_l, 'received_l')
+            +scalarMap(swapContract.received_p, 'received_p')
+        .col-xl-4
+          +contract('stableCoin')
+            +scalarList(stableCoin.__scalar)
+            +scalarMap(stableCoin.allowed, 'allowed')
+            +scalarMap(stableCoin.balances, 'balances')
+      .row
+        .col-xl-4
+          +dbond(dBonds.dbond)
+        .col-xl-4
+        .col-xl-4
+          +contract('timeOracle')
+            +scalarList(timeOracle.__scalar)
