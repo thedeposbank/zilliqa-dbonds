@@ -8,8 +8,8 @@ cd demo
 yarnpkg install
 ./demo.js deploy swapContract
 ./demo.js deploy timeOracle
-./demo.js stableCoin
-./demo.js dBonds
+./demo.js deploy stableCoin
+./demo.js deploy dBonds
 ```
 copy contract addresses to corresponding fields in contract_addrs.json
 
