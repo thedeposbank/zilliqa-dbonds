@@ -5,6 +5,7 @@
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "required_decimals", "type": "Uint32", "value": "4" },
     { "vname": "balances", "type": "Map (ByStr20) (Uint128)", "value": [] },
     {
       "vname": "allowed",
@@ -23,7 +24,7 @@
             "argtypes": [],
             "arguments": [ "1602324610", "US25152R5F60" ]
           },
-          "10",
+          "100000",
           "1602324610",
           "1602324610",
           "0xdeadbeefdeadbeef000000000000000000000001",

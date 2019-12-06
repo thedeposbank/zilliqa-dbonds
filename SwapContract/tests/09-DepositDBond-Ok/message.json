@@ -11,7 +11,7 @@
 		{
 			"vname" : "amount",
 			"type"  : "Uint128",
-			"value" : "1"
+			"value" : "10000"
 		},
 		{
 			"vname" : "code",

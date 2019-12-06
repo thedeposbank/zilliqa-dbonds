@@ -5,6 +5,7 @@
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "required_decimals", "type": "Uint32", "value": "4" },
     { "vname": "cur_state", "type": "Uint32", "value": "0" },
     {
       "vname": "dbond",
@@ -18,7 +19,7 @@
             "argtypes": [],
             "arguments": [ "1602324610", "BRANDNEWISIN" ]
           },
-          "10",
+          "100000",
           "1602324610",
           "1602324610",
           "0xdeadbeefdeadbeef000000000000000000000001",
