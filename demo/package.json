@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@zilliqa-js/zilliqa": "^0.8.6",
+    "tslib": "^1.10.0",
+    "debug": "^4.1.1",
+    "bootstrap": "^4.4.1",
+    "express": "^4.17.1",
+    "pug": "^2.0.4"
+  }
+}

@@ -1,0 +1,32 @@
+scilla_version 0
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+library TimeOracle
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract TimeOracle
+(owner: ByStr20)
+
+field cur_timestamp : Uint32 = Uint32 0
+
+transition UpdateTime (new_timestamp : Uint32)
+    valid_auth = builtin eq owner _sender;
+    cur_timestamp := new_timestamp
+end
+
+transition SendTimestamp ()
+  time <- cur_timestamp;
+  msg = { _tag : "OnGetTime"; _recipient : _sender; _amount : Uint128 0; new_timestamp : time};
+  msgs = one_msg msg;
+  send msgs
+end

@@ -1,0 +1,61 @@
+include scalar-list
+include scalar-map
+include dbond
+
+mixin contract(title)
+  h2= title
+  div.p-2.bg-light.text-dark
+    if block
+      block
+    else
+      p empty
+
+doctype html
+html(lang='en')
+  head
+    title zilliqa-dbonds demo
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js')
+    script(src='/js/bootstrap.min.js')
+  body
+    .text-center
+      h1 zilliqa-dbonds demo
+      p following data reflects state of corresponding contracts
+    .container
+      .row
+        .col-xl-4
+          +contract('dBonds')
+            +scalarList(dBonds.__scalar)
+            +scalarMap(dBonds.allowed, 'allowed')
+            +scalarMap(dBonds.balances, 'balances')
+        .col-xl-4
+          +contract('swapContract')
+            +scalarList(swapContract.__scalar)
+            h4 dbonds
+            table.table.table-bordered.table-sm
+              each value, key in swapContract.dbonds
+                tr
+                  td= key
+                  td= value.arguments[0].arguments[1]
+              else
+                tr
+                  th empty
+            +scalarMap(swapContract.exchangable, 'exchangeable')
+            +scalarMap(swapContract.received_d, 'received_d')
+            +scalarMap(swapContract.received_l, 'received_l')
+            +scalarMap(swapContract.received_p, 'received_p')
+        .col-xl-4
+          +contract('stableCoin')
+            +scalarList(stableCoin.__scalar)
+            +scalarMap(stableCoin.allowed, 'allowed')
+            +scalarMap(stableCoin.balances, 'balances')
+      .row
+        .col-xl-4
+          +dbond(dBonds.dbond)
+        .col-xl-4
+        .col-xl-4
+          +contract('timeOracle')
+            +scalarList(timeOracle.__scalar)

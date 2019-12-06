@@ -1,0 +1,11 @@
+include date
+mixin scalarList(list)
+  table.table.table-bordered.table-sm
+    each value, key in list
+      tr
+        td= key
+        td
+          if(key == 'cur_timestamp')
+            +date(value)
+          else
+            = value

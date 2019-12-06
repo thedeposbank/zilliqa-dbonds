@@ -1,0 +1,12 @@
+{
+	"_tag": "OnGetTime",
+	"_amount": "0",
+	"_sender" : "0x000000000000000000000000000000000000000a",
+	"params": [
+		{
+			"vname" : "new_timestamp",
+			"type" : "Uint32",
+			"value" : "1"
+		}
+	]
+}

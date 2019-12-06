@@ -1,0 +1,22 @@
+{
+	"_tag": "TransferSuccess",
+	"_amount": "0",
+	"_sender" : "0xabfeccdc9012345678901234567890f777567890",
+	"params": [
+		{
+			"vname" : "sender",
+			"type"  : "ByStr20",
+			"value" : "0xabfeccdc9012345678901234567890f77756789a"
+		},
+		{
+			"vname" : "amount",
+			"type"  : "Uint128",
+			"value" : "40000"
+		},
+		{
+			"vname" : "code",
+			"type"  : "Uint32",
+			"value" : "4"
+		}
+	]
+}
