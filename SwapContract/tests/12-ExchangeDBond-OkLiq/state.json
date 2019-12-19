@@ -41,7 +41,7 @@
       "vname": "received_d",
       "type": "Map (ByStr20) (Uint128)",
       "value": [
-        { "key": "0xabfeccdc9012345678901234567890f777567890", "val": "50000" }
+        { "key": "0xabfeccdc9012345678901234567890f777567890", "val": "20000" }
       ]
     },
     {

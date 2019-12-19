@@ -22,7 +22,7 @@
 	{
 		"vname" : "decimals",
 		"type" : "Uint32" ,
-		"value" : "0"
+		"value" : "4"
 	},
 	{ 
 		"vname" : "name",

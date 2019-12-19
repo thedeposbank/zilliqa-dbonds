@@ -5,12 +5,13 @@
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "required_decimals", "type": "Uint32", "value": "4" },
     { "vname": "cur_state", "type": "Uint32", "value": "5" },
     {
       "vname": "balances",
       "type": "Map (ByStr20) (Uint128)",
       "value": [
-        { "key": "0x1234567890123456789012345678901234567890", "val": "10" }
+        { "key": "0x1234567890123456789012345678901234567890", "val": "100000" }
       ]
     },
     {
@@ -30,7 +31,7 @@
             "argtypes": [],
             "arguments": [ "20000000", "US25152R5F60" ]
           },
-          "10",
+          "100000",
           "19000000",
           "21000000",
           "0xdeadbeefdeadbeef000000000000000000000001",

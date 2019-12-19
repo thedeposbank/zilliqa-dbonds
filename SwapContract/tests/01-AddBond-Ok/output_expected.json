@@ -5,6 +5,7 @@
   "message": null,
   "states": [
     { "vname": "_balance", "type": "Uint128", "value": "0" },
+    { "vname": "decimals", "type": "Uint32", "value": "4" },
     {
       "vname": "dbonds",
       "type": "Map (ByStr20) (Fcdb)",
