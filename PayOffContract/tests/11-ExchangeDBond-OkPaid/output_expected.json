@@ -71,7 +71,7 @@
       ]
     },
     {
-      "vname": "exchangable",
+      "vname": "exchangeable",
       "type": "Map (ByStr20) (Uint32)",
       "value": [
         { "key": "0xabfeccdc9012345678901234567890f777567890", "val": "1" }
