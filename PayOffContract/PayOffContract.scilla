@@ -69,7 +69,7 @@ field dbonds : Map ByStr20 (Fcdb) = Emp ByStr20 Fcdb
 field received_p : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_l : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
 field received_d : Map ByStr20 (Uint128) = Emp ByStr20 Uint128
-field exchangable : Map ByStr20 (Uint32) = Emp ByStr20 Uint32
+field exchangeable : Map ByStr20 (Uint32) = Emp ByStr20 Uint32
 field decimals : Uint32 = Uint32 4
 
 (* made by owner in order to avoid spam *)
@@ -94,7 +94,7 @@ transition AddDBond (db_contract : ByStr20, dbond : Fcdb)
     end
 end
 
-(* either accepts and exchangable = True or reverts the chain *)
+(* either accepts and exchangeable = True or reverts the chain *)
 (* if sent more, sends the change back to emitent *)
 procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
     db_dep <- received_d[db_contract];
@@ -117,7 +117,7 @@ procedure CheckIfPaid(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
             match is_paid with
             | True =>
                 true = Uint32 1;
-                exchangable[db_contract] := true
+                exchangeable[db_contract] := true
                 (* extra = builtin sub amount needed;
                 change = builtin lt zero extra;
                 match change with
@@ -141,7 +141,7 @@ end
 (* accepts payment from emitent if enough*)
 procedure AcceptPayOff(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
     db <- dbonds[db_contract];
-    ex <- exists exchangable[db_contract];
+    ex <- exists exchangeable[db_contract];
     match ex with
     | True =>
         e = { _exception : "AlreadyPaid"; caller : _sender; db_contract : db_contract};
@@ -176,7 +176,7 @@ end
 
 procedure AcceptLiquidation(caller : ByStr20, db_contract : ByStr20, amount : Uint128)
     db <- dbonds[db_contract];
-    ex <- exists exchangable[db_contract];
+    ex <- exists exchangeable[db_contract];
     match ex with
     | True =>
         e = { _exception : "AlreadyPaid"; caller : _sender; db_contract : db_contract};
@@ -192,7 +192,7 @@ procedure AcceptLiquidation(caller : ByStr20, db_contract : ByStr20, amount : Ui
                     accept;
                     received_l[db_contract] := amount;
                     true = Uint32 1;
-                    exchangable[db_contract] := true;
+                    exchangeable[db_contract] := true;
                     msg = { _tag : "OnSuccLiq"; _recipient : db_contract; _amount : zero};
                     msgs = one_msg msg;
                     send msgs;
@@ -214,7 +214,7 @@ end
 (* accepts transfer initiated by anyone *)
 procedure AcceptDBondDep(db_contract : ByStr20, sender : ByStr20, amount : Uint128)
     is_emitent <- exists dbonds[db_contract];
-    ex <- exists exchangable[db_contract];
+    ex <- exists exchangeable[db_contract];
     match ex with
     | True =>
         e = { _exception : "AlreadyPaid"; db_contract : db_contract; sender : sender};
@@ -243,7 +243,7 @@ end
 (* makes an exchange or aborts *)
 procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint128)
     (* caller here is supposed to be dbond contract *)
-    is_ex <- exists exchangable[db_contract];
+    is_ex <- exists exchangeable[db_contract];
     match is_ex with
     | True =>
         db <- dbonds[db_contract];
@@ -294,7 +294,7 @@ procedure ExchangeDBond(db_contract : ByStr20, sender : ByStr20, amount : Uint12
         | None =>
         end
     | False =>
-        e = { _exception : "NotExchangable"};
+        e = { _exception : "Notexchangeable"};
         throw e
     end
 end

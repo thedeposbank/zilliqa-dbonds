@@ -20,7 +20,7 @@
 		"value": []
 	},
 	{
-		"vname": "exchangable",
+		"vname": "exchangeable",
 		"type": "Map (ByStr20) (Uint32)",
 		"value": []
 	},
