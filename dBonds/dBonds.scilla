@@ -163,7 +163,7 @@ decimals : Uint32,
 name : String,
 symbol : String,
 time_oracle : ByStr20,
-swap_contract : ByStr20)
+payoff_contract : ByStr20)
 
 field dbond : Fcdb = 
   let z32 = Uint32 0 in
@@ -322,7 +322,7 @@ end
 
 (* is called from swap contract *)
 transition OnSuccPayOff ()
-  valid_auth = builtin eq _sender swap_contract;
+  valid_auth = builtin eq _sender payoff_contract;
   cur_st <- cur_state;
   valid_state = builtin eq cur_st issued;
   match valid_auth with
@@ -344,7 +344,7 @@ end
 
 (* is called from swap contract *)
 transition OnSuccLiq ()
-  valid_auth = builtin eq _sender swap_contract;
+  valid_auth = builtin eq _sender payoff_contract;
   cur_st <- cur_state;
   valid_state = builtin eq cur_st ex_tech_defaulted;
   match valid_auth with
@@ -393,7 +393,7 @@ procedure PayOff(caller : ByStr20, sender : ByStr20, amount : Uint128)
         match valid_auth with
         | True =>
           msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                to : swap_contract; tokens : amount; code : pay_off_code};
+                to : payoff_contract; tokens : amount; code : pay_off_code};
           msgs = one_msg msg;
           send msgs
         | False =>
@@ -427,7 +427,7 @@ procedure Liq(caller : ByStr20, sender : ByStr20, amount : Uint128)
         | True =>
           accept;
           msg = { _tag : "Transfer"; _recipient : pr_iss; _amount : zero; 
-                to : swap_contract; tokens : amount; code : liquidation_code};
+                to : payoff_contract; tokens : amount; code : liquidation_code};
           msgs = one_msg msg;
           send msgs
         | False =>
